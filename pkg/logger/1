@@ -82,3 +82,15 @@
 [2025-12-02T15:36:04.526+01:00] FLOW_SUCCESS [session_1764686164_2612089_op5] operation=test_operation flow=SUCCESS test_key=test_value count=123
 [2025-12-02T15:36:04.526+01:00] FLOW_ERROR [session_1764686164_2612089_op6] count=123 operation=failed_operation flow=ERROR error=test error test_key=test_value
 [2025-12-02T15:36:04.526+01:00] SESSION_END [session_1764686164_2612089_op7]
+[2025-12-02T16:04:36.930+01:00] SESSION_START [session_1764687876_2625789_op1] pid=2625789 version=gh-app-auth args=[/tmp/go-build1985346926/b286/logger.test -test.testlogfile=/tmp/go-build1985346926/b286/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2025-12-02T16:04:36.930+01:00] DEBUG [session_1764687876_2625789_op2] message=test debug test=value
+[2025-12-02T16:04:36.930+01:00] INFO [session_1764687876_2625789_op3] message=test info test=value
+[2025-12-02T16:04:36.930+01:00] ERROR [session_1764687876_2625789_op4] error=test test=value message=test error
+[2025-12-02T16:04:36.930+01:00] SESSION_END [session_1764687876_2625789_op5]
+[2025-12-02T16:04:36.930+01:00] SESSION_START [session_1764687876_2625789_op1] pid=2625789 version=gh-app-auth args=[/tmp/go-build1985346926/b286/logger.test -test.testlogfile=/tmp/go-build1985346926/b286/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2025-12-02T16:04:36.930+01:00] FLOW_START [session_1764687876_2625789_op2] operation=test_operation flow=START count=123 test_key=test_value
+[2025-12-02T16:04:36.930+01:00] FLOW_STEP [session_1764687876_2625789_op3] test_key=test_value count=123 step=step1 flow=STEP
+[2025-12-02T16:04:36.930+01:00] FLOW_STEP [session_1764687876_2625789_op4] count=123 step=step2 flow=STEP test_key=test_value
+[2025-12-02T16:04:36.930+01:00] FLOW_SUCCESS [session_1764687876_2625789_op5] count=123 operation=test_operation flow=SUCCESS test_key=test_value
+[2025-12-02T16:04:36.930+01:00] FLOW_ERROR [session_1764687876_2625789_op6] operation=failed_operation flow=ERROR error=test error test_key=test_value count=123
+[2025-12-02T16:04:36.930+01:00] SESSION_END [session_1764687876_2625789_op7]
