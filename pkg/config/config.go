@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -74,6 +75,8 @@ type PersonalAccessToken struct {
 	Username string `yaml:"username,omitempty" json:"username,omitempty"`
 }
 
+var ErrorNoGitHubAppDefined = errors.New("at least one github_app or pat is required")
+
 // Validate validates the configuration
 func (c *Config) Validate() error {
 	if c.Version == "" {
@@ -81,7 +84,7 @@ func (c *Config) Validate() error {
 	}
 
 	if len(c.GitHubApps) == 0 && len(c.PATs) == 0 {
-		return fmt.Errorf("at least one github_app or pat is required")
+		return ErrorNoGitHubAppDefined
 	}
 
 	for i, app := range c.GitHubApps {

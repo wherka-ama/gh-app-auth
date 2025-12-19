@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -63,14 +64,17 @@ func TestValidateSetupInputs(t *testing.T) {
 		patterns      []string
 		useKeyring    bool
 		useFilesystem bool
+		keyFile       string
 		wantErr       bool
 		wantKeyring   bool
+		expectedErr   error
 	}{
 		{
 			name:        "valid inputs with keyring",
 			appID:       123456,
 			patterns:    []string{"github.com/org/*"},
 			useKeyring:  true,
+			keyFile:     "",
 			wantErr:     false,
 			wantKeyring: true,
 		},
@@ -80,8 +84,20 @@ func TestValidateSetupInputs(t *testing.T) {
 			patterns:      []string{"github.com/org/*"},
 			useKeyring:    true,
 			useFilesystem: true,
+			keyFile:       "",
 			wantErr:       false,
 			wantKeyring:   false, // filesystem overrides keyring
+		},
+		{
+			name:          "conflicting options",
+			appID:         123456,
+			patterns:      []string{"github.com/org/*"},
+			useKeyring:    true,
+			useFilesystem: true,
+			keyFile:       "some key file",
+			wantErr:       true,
+			wantKeyring:   false, // filesystem overrides keyring
+			expectedErr:   ErrorConflictingKeyOptions,
 		},
 		{
 			name:     "invalid app ID - zero",
@@ -119,12 +135,16 @@ func TestValidateSetupInputs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			useKeyring := tt.useKeyring
 			useFilesystem := tt.useFilesystem
+			keyFile := tt.keyFile
 
-			err := validateSetupInputs(tt.appID, tt.patterns, &useKeyring, &useFilesystem)
+			err := validateSetupInputs(tt.appID, tt.patterns, &useKeyring, &useFilesystem, keyFile)
 
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error but got none")
+				}
+				if tt.expectedErr != nil && !errors.Is(err, tt.expectedErr) {
+					t.Error("Expected error to be ", tt.expectedErr, "got", err)
 				}
 				return
 			}
@@ -146,7 +166,8 @@ func TestGetPrivateKey(t *testing.T) {
 	t.Run("from environment variable", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "test-private-key-content")
 
-		content, path, err := getPrivateKey("")
+		var useFileSystem = true
+		content, path, err := getPrivateKey("", &useFileSystem)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -175,7 +196,8 @@ func TestGetPrivateKey(t *testing.T) {
 			t.Fatalf("Failed to create test key file: %v", err)
 		}
 
-		content, path, err := getPrivateKey(keyPath)
+		var useFileSystem = true
+		content, path, err := getPrivateKey(keyPath, &useFileSystem)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -192,7 +214,8 @@ func TestGetPrivateKey(t *testing.T) {
 	t.Run("missing key", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "")
 
-		_, _, err := getPrivateKey("")
+		var useFileSystem = false
+		_, _, err := getPrivateKey("", &useFileSystem)
 		if err == nil {
 			t.Error("Expected error for missing key")
 		}
@@ -201,7 +224,8 @@ func TestGetPrivateKey(t *testing.T) {
 	t.Run("nonexistent file", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "")
 
-		_, _, err := getPrivateKey("/nonexistent/key.pem")
+		var useFileSystem = true
+		_, _, err := getPrivateKey("/nonexistent/key.pem", &useFileSystem)
 		if err == nil {
 			t.Error("Expected error for nonexistent file")
 		}
