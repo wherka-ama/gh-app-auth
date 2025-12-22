@@ -25,7 +25,7 @@ func LoadOrCreate() (*Config, error) {
 			}, nil
 		}
 		// Check if error is due to empty apps (valid during setup)
-		if errors.Is(err, ErrorNoGitHubAppDefined) {
+		if errors.Is(err, ErrNoGitHubAppDefined) {
 			// Load the file without validation
 			loader := NewDefaultLoader()
 			data, readErr := os.ReadFile(loader.GetConfigPath())

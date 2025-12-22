@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -150,7 +151,7 @@ func setupGitHubApp(
 	}
 
 	// Get and validate private key
-	privateKeyContent, expandedKeyFile, err := getPrivateKey(keyFile, &useFilesystem)
+	privateKeyContent, expandedKeyFile, err := getPrivateKey(keyFile)
 	if err != nil {
 		return err
 	}
@@ -284,10 +285,18 @@ func validateKeyFile(keyPath string) error {
 	return nil
 }
 
-var ErrorConflictingKeyOptions = errors.New("⚠️ Both --key-file and GH_APP_PRIVATE_KEY are provided, choose one or the other, not both.\n")
+var ErrConflictingKeyOptions = errors.New(
+	"both --key-file and GH_APP_PRIVATE_KEY are provided, choose one or the other, not both",
+)
+
+var ErrFilesystemRequiresKeyFile = errors.New(
+	"--use-filesystem requires --key-file; GH_APP_PRIVATE_KEY env var cannot be used with filesystem storage",
+)
 
 // validateSetupInputs validates the setup command inputs
-func validateSetupInputs(appID int64, patterns []string, useKeyring *bool, useFilesystem *bool, keyFile string) error {
+func validateSetupInputs(
+	appID int64, patterns []string, useKeyring *bool, useFilesystem *bool, keyFile string,
+) error {
 	if appID <= 0 {
 		return fmt.Errorf("app-id must be a positive integer")
 	}
@@ -296,9 +305,10 @@ func validateSetupInputs(appID int64, patterns []string, useKeyring *bool, useFi
 		return fmt.Errorf("at least one pattern is required")
 	}
 
+	// Check for incompatible storage configuration
 	var envKey = os.Getenv("GH_APP_PRIVATE_KEY")
-	if *useFilesystem && envKey != "" && keyFile != "" {
-		return ErrorConflictingKeyOptions
+	if *useFilesystem && envKey != "" && keyFile == "" {
+		return ErrFilesystemRequiresKeyFile
 	}
 
 	// Handle storage method flags
@@ -310,15 +320,20 @@ func validateSetupInputs(appID int64, patterns []string, useKeyring *bool, useFi
 }
 
 // getPrivateKey retrieves and validates the private key from environment or file
-func getPrivateKey(keyFile string, useFilesystem *bool) (string, string, error) {
+func getPrivateKey(keyFile string) (string, string, error) {
 	var privateKeyContent string
 	var expandedKeyFile string
+	var err error
 
 	var envKey = os.Getenv("GH_APP_PRIVATE_KEY")
-	if envKey != "" {
-		privateKeyContent = envKey
-	} else if keyFile != "" {
-		var err error
+
+	// Check for conflicting options: both explicit --key-file and environment variable
+	if keyFile != "" && envKey != "" {
+		return "", "", ErrConflictingKeyOptions
+	}
+
+	// Priority 1: Explicit --key-file parameter (user's explicit choice)
+	if keyFile != "" {
 		expandedKeyFile, err = expandPath(keyFile)
 		if err != nil {
 			return "", "", fmt.Errorf("invalid key file path: %w", err)
@@ -335,7 +350,11 @@ func getPrivateKey(keyFile string, useFilesystem *bool) (string, string, error) 
 			return "", "", fmt.Errorf("failed to read key file: %w", err)
 		}
 		privateKeyContent = string(keyData)
+	} else if envKey != "" {
+		// Priority 2: Environment variable (implicit configuration)
+		privateKeyContent = envKey
 	} else {
+		// Priority 3: Error if neither is provided
 		return "", "", fmt.Errorf("private key required: use --key-file or set GH_APP_PRIVATE_KEY environment variable")
 	}
 
@@ -500,7 +519,159 @@ func configureAppStorage(
 		// Try keyring storage
 		backend, err = app.SetPrivateKey(secretMgr, privateKeyContent)
 		if err != nil {
-			return "", fmt.Errorf("failed to store private key: %w", err)
+			// Keyring failed - check if we can fallback
+			if expandedKeyFile != "" {
+				// Graceful fallback to filesystem
+				fmt.Printf("⚠️  Keyring unavailable, falling back to filesystem storage\n")
+				app.PrivateKeyPath = expandedKeyFile
+				app.PrivateKeySource = config.PrivateKeySourceFilesystem
+				backend = secrets.StorageBackendFilesystem
+			} else {
+				// No fallback possible - key from env var without file path
+				return "", errors.New(formatKeyringUnavailableError(runtime.GOOS, false))
+			}
+		}
+	} else {
+		// Use filesystem storage
+		if expandedKeyFile != "" {
+			app.PrivateKeyPath = expandedKeyFile
+			app.PrivateKeySource = config.PrivateKeySourceFilesystem
+			backend = secrets.StorageBackendFilesystem
+		} else {
+			return "", fmt.Errorf("filesystem storage requires --key-file")
+		}
+	}
+
+	return backend, nil
+}
+
+// getKeyringInstallInstructions returns OS-specific instructions for installing keyring
+func getKeyringInstallInstructions(goos string) string {
+	switch goos {
+	case "linux":
+		return `
+Keyring Installation Options for Linux:
+
+1. GNOME Keyring (most common):
+   - Ubuntu/Debian: apt install gnome-keyring libsecret-1-0
+   - Fedora/RHEL: dnf install gnome-keyring libsecret
+   - Without root: Use 'pass' (password-store) in your home directory
+
+2. KDE Wallet:
+   - Ubuntu/Debian: apt install kwalletmanager
+   - Fedora/RHEL: dnf install kwalletmanager
+
+3. Pass (password-store) - No root required:
+   - Install to ~/.local/bin from https://www.passwordstore.org/
+   - Works entirely in your home directory
+
+Note: If you don't have root access, 'pass' is your best option as it can be
+installed and run entirely from your home directory.`
+
+	case "darwin":
+		return `
+Keyring on macOS:
+
+macOS Keychain is built into the system and should be available by default.
+If you're experiencing issues:
+
+1. Check Keychain Access app in Applications/Utilities
+2. Ensure your login keychain is unlocked
+3. Try: security unlock-keychain ~/Library/Keychains/login.keychain-db
+
+If problems persist, you may need to reset your keychain (contact your system administrator).`
+
+	case "windows":
+		return `
+Keyring on Windows:
+
+Windows Credential Manager is built into the system and should be available by default.
+If you're experiencing issues:
+
+1. Open Control Panel → Credential Manager
+2. Check if Windows Credential Manager service is running
+3. Try: Control Panel → User Accounts → Credential Manager
+
+If problems persist, contact your system administrator.`
+
+	case "freebsd":
+		return `
+Keyring Installation Options for FreeBSD:
+
+1. GNOME Keyring:
+   - pkg install gnome-keyring
+   - Without root: Use 'pass' (password-store) in your home directory
+
+2. Pass (password-store) - No root required:
+   - Install to ~/.local/bin from ports or packages
+   - Works entirely in your home directory
+
+Note: If you don't have root access, 'pass' is your best option.`
+
+	default:
+		return `
+Keyring support varies by operating system. Common options:
+
+1. Use --key-file to specify a key file path instead
+2. Install a keyring/credential manager for your OS
+3. Contact your system administrator for assistance`
+	}
+}
+
+// formatKeyringUnavailableError formats a helpful error message when keyring is unavailable
+func formatKeyringUnavailableError(goos string, hasKeyFile bool) string {
+	baseMsg := `Keyring is unavailable on this system, but you're using GH_APP_PRIVATE_KEY environment variable.
+
+This combination is not supported because:
+- Keyring storage is needed to securely store credentials from environment variables
+- Filesystem storage requires a persistent key file path (use --key-file instead)
+
+Options to resolve this:
+`
+
+	if hasKeyFile {
+		baseMsg += `
+1. Use --key-file to specify your key file path (recommended)
+2. Install and configure a keyring for your system (see below)
+`
+	} else {
+		baseMsg += `
+1. Use --key-file to specify your key file path (recommended):
+   gh app-auth setup --app-id <id> --key-file /path/to/key.pem --patterns "github.com/org/*"
+
+2. Install and configure a keyring for your system (see below)
+`
+	}
+
+	baseMsg += "\n" + getKeyringInstallInstructions(goos)
+
+	return baseMsg
+}
+
+// configureAppStorageWithKeyringCheck is a testable version of configureAppStorage
+// that allows mocking keyring availability
+func configureAppStorageWithKeyringCheck(
+	app *config.GitHubApp, expandedKeyFile string,
+	useKeyring bool, keyringAvailable bool,
+) (secrets.StorageBackend, error) {
+	var backend secrets.StorageBackend
+
+	if useKeyring {
+		if !keyringAvailable {
+			// Keyring unavailable - check if we can fallback
+			if expandedKeyFile != "" {
+				// Graceful fallback to filesystem
+				app.PrivateKeyPath = expandedKeyFile
+				app.PrivateKeySource = config.PrivateKeySourceFilesystem
+				backend = secrets.StorageBackendFilesystem
+			} else {
+				// No fallback possible - key from env var
+				return "", errors.New(formatKeyringUnavailableError(runtime.GOOS, false))
+			}
+		} else {
+			// Keyring available - use it
+			backend = secrets.StorageBackendKeyring
+			app.PrivateKeySource = config.PrivateKeySourceKeyring
 		}
 	} else {
 		// Use filesystem storage

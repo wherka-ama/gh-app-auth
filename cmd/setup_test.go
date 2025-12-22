@@ -89,17 +89,6 @@ func TestValidateSetupInputs(t *testing.T) {
 			wantKeyring:   false, // filesystem overrides keyring
 		},
 		{
-			name:          "conflicting options",
-			appID:         123456,
-			patterns:      []string{"github.com/org/*"},
-			useKeyring:    true,
-			useFilesystem: true,
-			keyFile:       "some key file",
-			wantErr:       true,
-			wantKeyring:   false, // filesystem overrides keyring
-			expectedErr:   ErrorConflictingKeyOptions,
-		},
-		{
 			name:     "invalid app ID - zero",
 			appID:    0,
 			patterns: []string{"github.com/org/*"},
@@ -129,15 +118,29 @@ func TestValidateSetupInputs(t *testing.T) {
 			patterns: []string{"github.com/org1/*", "github.com/org2/*"},
 			wantErr:  false,
 		},
+		{
+			name:          "filesystem storage with env var but no key file",
+			appID:         123456,
+			patterns:      []string{"github.com/org/*"},
+			useKeyring:    false,
+			useFilesystem: true,
+			keyFile:       "",
+			wantErr:       true,
+			expectedErr:   ErrFilesystemRequiresKeyFile,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Set env var for the filesystem storage conflict test
+			if tt.name == "filesystem storage with env var but no key file" {
+				t.Setenv("GH_APP_PRIVATE_KEY", "test-key-content")
+			}
+
 			useKeyring := tt.useKeyring
 			useFilesystem := tt.useFilesystem
-			keyFile := tt.keyFile
 
-			err := validateSetupInputs(tt.appID, tt.patterns, &useKeyring, &useFilesystem, keyFile)
+			err := validateSetupInputs(tt.appID, tt.patterns, &useKeyring, &useFilesystem, tt.keyFile)
 
 			if tt.wantErr {
 				if err == nil {
@@ -166,8 +169,7 @@ func TestGetPrivateKey(t *testing.T) {
 	t.Run("from environment variable", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "test-private-key-content")
 
-		var useFileSystem = true
-		content, path, err := getPrivateKey("", &useFileSystem)
+		content, path, err := getPrivateKey("")
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -196,8 +198,7 @@ func TestGetPrivateKey(t *testing.T) {
 			t.Fatalf("Failed to create test key file: %v", err)
 		}
 
-		var useFileSystem = true
-		content, path, err := getPrivateKey(keyPath, &useFileSystem)
+		content, path, err := getPrivateKey(keyPath)
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
@@ -214,18 +215,40 @@ func TestGetPrivateKey(t *testing.T) {
 	t.Run("missing key", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "")
 
-		var useFileSystem = false
-		_, _, err := getPrivateKey("", &useFileSystem)
+		_, _, err := getPrivateKey("")
 		if err == nil {
 			t.Error("Expected error for missing key")
+		}
+	})
+
+	t.Run("conflicting options - both env var and key file", func(t *testing.T) {
+		// Skip on Windows - file permissions are not enforced the same way
+		if runtime.GOOS == "windows" {
+			t.Skip("Skipping on Windows: file permissions not supported")
+		}
+
+		// Set both env var and provide key file
+		t.Setenv("GH_APP_PRIVATE_KEY", "env-key-content")
+
+		keyPath := filepath.Join(tempDir, "conflict-test.pem")
+		keyContent := "-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----"
+		if err := os.WriteFile(keyPath, []byte(keyContent), 0600); err != nil {
+			t.Fatalf("Failed to create test key file: %v", err)
+		}
+
+		_, _, err := getPrivateKey(keyPath)
+		if err == nil {
+			t.Error("Expected error for conflicting key options")
+		}
+		if !errors.Is(err, ErrConflictingKeyOptions) {
+			t.Errorf("Expected ErrConflictingKeyOptions, got: %v", err)
 		}
 	})
 
 	t.Run("nonexistent file", func(t *testing.T) {
 		t.Setenv("GH_APP_PRIVATE_KEY", "")
 
-		var useFileSystem = true
-		_, _, err := getPrivateKey("/nonexistent/key.pem", &useFileSystem)
+		_, _, err := getPrivateKey("/nonexistent/key.pem")
 		if err == nil {
 			t.Error("Expected error for nonexistent file")
 		}

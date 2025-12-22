@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -296,7 +297,7 @@ func TestLoadListConfiguration(t *testing.T) {
 			t.Fatalf("Failed to write config: %v", err)
 		}
 
-		loadedCfg, err := loadListConfiguration()
+		loadedCfg, err := loadListConfiguration(io.Discard)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -317,14 +318,14 @@ func TestLoadListConfiguration(t *testing.T) {
 
 		// loadListConfiguration checks for os.IsNotExist but config.Load wraps the error
 		// So it may not detect it correctly, hence an error is returned
-		_, err := loadListConfiguration()
+		_, err := loadListConfiguration(io.Discard)
 		// The function prints a message but may return an error
 		// Either nil or error is acceptable depending on error wrapping
 		_ = err // Don't assert on error presence
 	})
 
 	t.Run("empty configuration", func(t *testing.T) {
-		// Create config with no apps - this will fail validation
+		// Create config with no apps
 		cfg := &config.Config{
 			Version:    "1.0",
 			GitHubApps: []config.GitHubApp{},
@@ -338,11 +339,14 @@ func TestLoadListConfiguration(t *testing.T) {
 			t.Fatalf("Failed to write config: %v", err)
 		}
 
-		// Config load will fail validation when no apps present
-		_, err = loadListConfiguration()
-		// This should return an error since config validation requires at least one app
-		if err == nil {
-			t.Error("Expected error for config with no apps")
+		// Config load should handle empty config gracefully
+		cfg, err = loadListConfiguration(io.Discard)
+		// Should not return error - should show friendly message instead
+		if err != nil {
+			t.Errorf("Expected no error for empty config, got: %v", err)
+		}
+		if cfg != nil {
+			t.Error("Expected nil config for empty configuration")
 		}
 	})
 
@@ -352,7 +356,7 @@ func TestLoadListConfiguration(t *testing.T) {
 			t.Fatalf("Failed to write config: %v", err)
 		}
 
-		_, err := loadListConfiguration()
+		_, err := loadListConfiguration(io.Discard)
 		if err == nil {
 			t.Error("Expected error for invalid config file")
 		}

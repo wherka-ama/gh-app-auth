@@ -75,7 +75,7 @@ type PersonalAccessToken struct {
 	Username string `yaml:"username,omitempty" json:"username,omitempty"`
 }
 
-var ErrorNoGitHubAppDefined = errors.New("at least one github_app or pat is required")
+var ErrNoGitHubAppDefined = errors.New("at least one github_app or pat is required")
 
 // Validate validates the configuration
 func (c *Config) Validate() error {
@@ -84,7 +84,7 @@ func (c *Config) Validate() error {
 	}
 
 	if len(c.GitHubApps) == 0 && len(c.PATs) == 0 {
-		return ErrorNoGitHubAppDefined
+		return ErrNoGitHubAppDefined
 	}
 
 	for i, app := range c.GitHubApps {

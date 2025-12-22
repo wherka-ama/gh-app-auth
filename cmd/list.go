@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -50,8 +51,8 @@ Shows the configured credential sources, their patterns, priorities, and status.
 func listRun(format *string, quiet *bool, verifyKeys *bool) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// Load and validate configuration
-		cfg, err := loadListConfiguration()
-		
+		cfg, err := loadListConfiguration(cmd.OutOrStdout())
+
 		if err != nil {
 			return err
 		}
@@ -269,10 +270,14 @@ func verifyPATAccess(pat config.PersonalAccessToken, secretMgr *secrets.Manager)
 }
 
 // loadListConfiguration loads and validates the configuration for listing
-func loadListConfiguration() (*config.Config, error) {
+func loadListConfiguration(out io.Writer) (*config.Config, error) {
 	cfg, err := config.Load()
-	if errors.Is(err, config.ErrorConfigNotExists) {
-		fmt.Printf("No GitHub Apps configured. Run 'gh app-auth setup' to add one.\n")
+	if errors.Is(err, config.ErrConfigNotExists) {
+		_, _ = fmt.Fprintf(out, "No GitHub Apps configured. Run 'gh app-auth setup' to add one.\n")
+		return nil, nil
+	}
+	if errors.Is(err, config.ErrNoGitHubAppDefined) {
+		_, _ = fmt.Fprintf(out, "No GitHub Apps or Personal Access Tokens configured. Run 'gh app-auth setup' to add one.\n")
 		return nil, nil
 	}
 	if err != nil {
@@ -280,7 +285,7 @@ func loadListConfiguration() (*config.Config, error) {
 	}
 
 	if len(cfg.GitHubApps) == 0 && len(cfg.PATs) == 0 {
-		fmt.Printf("No GitHub Apps or Personal Access Tokens configured. Run 'gh app-auth setup' to add one.\n")
+		_, _ = fmt.Fprintf(out, "No GitHub Apps or Personal Access Tokens configured. Run 'gh app-auth setup' to add one.\n")
 		return nil, nil
 	}
 

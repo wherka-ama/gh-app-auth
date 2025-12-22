@@ -156,9 +156,14 @@ func TestListRun_NoApps(t *testing.T) {
 		cmd.SetErr(&stdout)
 
 		err := cmd.Execute()
-		// Should not error, but output should indicate no apps
+		// Should not error - should show friendly message instead
 		if err != nil {
-			t.Logf("Command returned: %v (may be expected)", err)
+			t.Errorf("Expected no error for empty config, got: %v", err)
+		}
+
+		output := stdout.String()
+		if !strings.Contains(output, "No GitHub Apps") {
+			t.Errorf("Expected friendly message about no apps, got: %s", output)
 		}
 	})
 }
