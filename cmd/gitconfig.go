@@ -101,6 +101,8 @@ func syncGitConfig(scope string) error {
 
 	// Track configured patterns to avoid duplicates
 	configured := make(map[string]bool)
+	// Track hosts that need useHttpPath enabled for path-based matching
+	hostsNeedingHttpPath := make(map[string]bool)
 
 	configurePattern := func(pattern, source string) {
 		if configured[pattern] {
@@ -139,6 +141,14 @@ func syncGitConfig(scope string) error {
 		fmt.Printf("   Pattern: %s\n\n", pattern)
 
 		configured[pattern] = true
+
+		// Track if this is a path-specific pattern (has org/repo in path)
+		// If so, we need to enable useHttpPath for the host
+		host := extractHost(pattern)
+		if host != "" && context != fmt.Sprintf("https://%s", host) {
+			// This is a path-specific context, we need useHttpPath on the base host
+			hostsNeedingHttpPath[host] = true
+		}
 	}
 
 	for _, app := range cfg.GitHubApps {
@@ -157,6 +167,21 @@ func syncGitConfig(scope string) error {
 
 	if len(configured) == 0 {
 		return fmt.Errorf("no valid patterns found to configure")
+	}
+
+	// Enable useHttpPath for hosts with path-specific patterns
+	// This is critical for git to match path-specific credential helpers correctly
+	for host := range hostsNeedingHttpPath {
+		useHttpPathKey := fmt.Sprintf("credential.https://%s.useHttpPath", host)
+		setCmd := exec.Command("git", "config", scope, useHttpPathKey, "true")
+		if err := setCmd.Run(); err != nil {
+			fmt.Printf("⚠️  Warning: Failed to enable useHttpPath for %s: %v\n", host, err)
+		} else {
+			fmt.Printf("🔧 Enabled useHttpPath for %s (required for path-based credential matching)\n", host)
+		}
+	}
+	if len(hostsNeedingHttpPath) > 0 {
+		fmt.Println()
 	}
 
 	fmt.Printf("✨ Successfully configured %d credential helper(s)\n\n", len(configured))
