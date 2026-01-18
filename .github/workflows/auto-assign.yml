@@ -1,7 +1,10 @@
 name: Auto Assign
 
 on:
-  pull_request:
+  # Use pull_request_target for PRs to have write permissions on fork PRs
+  # This is safe because we don't checkout or execute any code from the PR
+  # We only use GitHub API to assign users and add labels
+  pull_request_target:
     types: [opened, ready_for_review]
   issues:
     types: [opened]
@@ -14,7 +17,7 @@ jobs:
   assign:
     name: Auto-assign issues and PRs
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false || github.event_name == 'issues'
     steps:
       - name: Auto-assign issue or PR to author
         uses: actions/github-script@v7
@@ -43,7 +46,7 @@ jobs:
   label-pr:
     name: Label pull requests
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request_target'
     steps:
       - name: Check out code
         uses: actions/checkout@v4
