@@ -74,6 +74,8 @@ jobs:
   nancy:
     name: Dependency Security Scan
     runs-on: ubuntu-latest
+    # Skip for fork PRs as secrets are not available
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     continue-on-error: true  # Don't fail if nancy has issues
     steps:
       - name: Check out code
@@ -96,21 +98,30 @@ jobs:
           OSSI_TOKEN: ${{ secrets.SONATATYPE_OSSI_TOKEN }}
           OSSI_USERNAME: ${{ vars.SONATATYPE_OSSI_USERNAME }}
         run: |
-          [ -z "$OSSI_TOKEN" ] && echo "OSSI_TOKEN is EMPTY"
-          [ -z "$OSSI_USERNAME" ] && echo "OSSI_USERNAME is EMPTY"
+          # Skip if credentials are not available (e.g., fork PRs)
+          if [ -z "$OSSI_TOKEN" ] || [ -z "$OSSI_USERNAME" ]; then
+            echo "⚠️ OSSI credentials not available, skipping Nancy scan"
+            echo "This is expected for fork PRs where secrets are not accessible"
+            exit 0
+          fi
           go list -json -deps ./... | nancy sleuth --token "$OSSI_TOKEN" --username "$OSSI_USERNAME"
 
   secret-scan:
     name: Secret Scanning
     runs-on: ubuntu-latest
+    # Skip on push events where before/after are the same (initial commit, force push to same SHA)
+    if: github.event_name != 'push' || github.event.before != github.event.after
     continue-on-error: true  # Don't fail on scanning issues
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for proper diff
 
       - name: Run Trufflehog
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
-          head: HEAD
+          base: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          head: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          extra_args: --only-verified
