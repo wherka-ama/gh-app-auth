@@ -24,6 +24,72 @@ var (
 		"choose one or the other, not both")
 )
 
+// OrgPattern represents a pattern grouped by organization
+type OrgPattern struct {
+	Host    string
+	Org     string
+	Pattern string
+}
+
+// extractUniqueOrgs extracts unique organizations from patterns
+// Returns a slice of OrgPattern, one for each pattern, preserving order
+func extractUniqueOrgs(patterns []string) ([]OrgPattern, error) {
+	if len(patterns) == 0 {
+		return nil, fmt.Errorf("no patterns provided")
+	}
+
+	result := make([]OrgPattern, 0, len(patterns))
+	for _, pattern := range patterns {
+		host, org, err := parsePatternForInstallation(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("invalid pattern format: %w", err)
+		}
+
+		result = append(result, OrgPattern{
+			Host:    host,
+			Org:     org,
+			Pattern: pattern,
+		})
+	}
+
+	return result, nil
+}
+
+// groupPatternsByOrg groups patterns by organization
+// Returns a map where key is org name and value is slice of patterns for that org
+func groupPatternsByOrg(patterns []string) map[string][]string {
+	groups := make(map[string][]string)
+
+	for _, pattern := range patterns {
+		_, org, err := parsePatternForInstallation(pattern)
+		if err != nil {
+			// Skip invalid patterns - validation should happen before this
+			continue
+		}
+
+		groups[org] = append(groups[org], pattern)
+	}
+
+	return groups
+}
+
+// validateMultiPatternSetup validates patterns for multi-org setup
+// Returns error for empty patterns or invalid pattern formats
+func validateMultiPatternSetup(patterns []string) error {
+	if len(patterns) == 0 {
+		return fmt.Errorf("no patterns provided")
+	}
+
+	for _, pattern := range patterns {
+		_, _, err := parsePatternForInstallation(pattern)
+		if err != nil {
+			return fmt.Errorf("invalid pattern: %w", err)
+		}
+	}
+
+	return nil
+}
+
 func NewSetupCmd() *cobra.Command {
 	var (
 		appID          int64
@@ -168,43 +234,65 @@ func setupGitHubApp(
 		return nil, err
 	}
 
-	// Auto-detect installation ID if not provided
-	if installationID == 0 {
-		detectedID, err := autoDetectInstallationID(jwtToken, patterns)
+	// Group patterns by organization to handle multi-org setups
+	groupedPatterns := groupPatternsByOrg(patterns)
+
+	var firstApp *config.GitHubApp
+	var backend secrets.StorageBackend
+
+	// For each unique organization, create a separate GitHub App entry
+	for org, orgPatterns := range groupedPatterns {
+		// Get the representative pattern for this org (first one)
+		repPattern := orgPatterns[0]
+
+		// Auto-detect installation ID if not provided (per org)
+		orgInstallationID := installationID
+		if orgInstallationID == 0 {
+			detectedID, err := autoDetectInstallationID(jwtToken, []string{repPattern})
+			if err != nil {
+				return nil, fmt.Errorf("failed to auto-detect installation ID for org '%s': %w", org, err)
+			}
+			orgInstallationID = detectedID
+			if !silent {
+				fmt.Printf("🔍 Auto-detected installation ID for '%s': %d\n", org, orgInstallationID)
+			}
+		}
+
+		// Create the GitHub App entry for this org
+		app := createGitHubApp(appID, name, orgInstallationID, orgPatterns, priority)
+
+		// Store private key and configure storage (only needed once, but we do it for each)
+		backend, err = configureAppStorage(&app, privateKeyContent, expandedKeyFile, useKeyring)
 		if err != nil {
-			return nil, fmt.Errorf("failed to auto-detect installation ID: %w", err)
+			return nil, err
 		}
-		installationID = detectedID
-		if !silent {
-			fmt.Printf("🔍 Auto-detected installation ID: %d\n", installationID)
+
+		// Validate the complete app configuration after storage is configured
+		if err := app.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid app configuration for org '%s': %w", org, err)
 		}
-	}
 
-	// Create the GitHub App (validation happens after storage configuration)
-	app := createGitHubApp(appID, name, installationID, patterns, priority)
+		// Save configuration
+		if err := saveAppConfiguration(cfg, &app); err != nil {
+			return nil, err
+		}
 
-	// Store private key and configure storage
-	backend, err := configureAppStorage(&app, privateKeyContent, expandedKeyFile, useKeyring)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate the complete app configuration after storage is configured
-	if err := app.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid app configuration: %w", err)
-	}
-
-	// Save configuration
-	if err := saveAppConfiguration(cfg, &app); err != nil {
-		return nil, err
+		// Keep reference to first app for return value
+		if firstApp == nil {
+			firstApp = &app
+		}
 	}
 
 	// Display success message and next steps
 	if !silent {
-		displaySetupSuccess(name, appID, patterns, priority, backend, expandedKeyFile)
+		if len(groupedPatterns) > 1 {
+			displaySetupSuccessMultiOrg(name, appID, groupedPatterns, priority, backend, expandedKeyFile)
+		} else {
+			displaySetupSuccess(name, appID, patterns, priority, backend, expandedKeyFile)
+		}
 	}
 
-	return &app, nil
+	return firstApp, nil
 }
 
 func setupPAT(
@@ -257,14 +345,14 @@ func setupPAT(
 		fmt.Printf("   Username: %s\n", username)
 	}
 	if backend == secrets.StorageBackendKeyring {
-		fmt.Printf("   🔐 Storage: OS Keyring (encrypted)\n")
+		fmt.Println("   🔐 Storage: OS Keyring (encrypted)")
 	} else {
-		fmt.Printf("   📁 Storage: Filesystem\n")
+		fmt.Println("   📁 Storage: Filesystem")
 	}
 
-	fmt.Printf("\n💡 Next steps:\n")
-	fmt.Printf("   1. Sync git credential helper: gh app-auth gitconfig --sync --global\n")
-	fmt.Printf("      # or run 'gh app-auth gitconfig --sync --local' inside a repository\n")
+	fmt.Println("\n💡 Next steps:")
+	fmt.Println("   1. Sync git credential helper: gh app-auth gitconfig --sync --global")
+	fmt.Println("      # or run 'gh app-auth gitconfig --sync --local' inside a repository")
 
 	return nil
 }
@@ -550,18 +638,52 @@ func displaySetupSuccess(
 
 	// Display storage information
 	if backend == secrets.StorageBackendKeyring {
-		fmt.Printf("   🔐 Storage: OS Keyring (encrypted)\n")
+		fmt.Println("   🔐 Storage: OS Keyring (encrypted)")
 		if expandedKeyFile != "" {
 			fmt.Printf("   📝 Fallback: %s\n", expandedKeyFile)
 		}
 	} else {
-		fmt.Printf("   📁 Storage: Filesystem\n")
+		fmt.Println("   📁 Storage: Filesystem")
 		fmt.Printf("   📝 Key file: %s\n", expandedKeyFile)
-		fmt.Printf("   ⚠️  Keyring unavailable - using filesystem storage\n")
+		fmt.Println("   ⚠️  Keyring unavailable - using filesystem storage")
 	}
 
-	fmt.Printf("\n💡 Next steps:\n")
-	fmt.Printf("   1. Test authentication: gh app-auth test --repo <repository-url>\n")
-	fmt.Printf("   2. Sync git credential helper: gh app-auth gitconfig --sync --global\n")
-	fmt.Printf("      # or run 'gh app-auth gitconfig --sync --local' inside a repository\n")
+	fmt.Println("\n💡 Next steps:")
+	fmt.Println("   1. Test authentication: gh app-auth test --repo <repository-url>")
+	fmt.Println("   2. Sync git credential helper: gh app-auth gitconfig --sync --global")
+	fmt.Println("      # or run 'gh app-auth gitconfig --sync --local' inside a repository")
+}
+
+// displaySetupSuccessMultiOrg displays success message for multi-org setup
+func displaySetupSuccessMultiOrg(
+	name string, appID int64, groupedPatterns map[string][]string, priority int,
+	backend secrets.StorageBackend, expandedKeyFile string,
+) {
+	fmt.Printf("✅ Successfully configured GitHub App '%s'\n", name)
+	fmt.Printf("   App ID: %d\n", appID)
+	fmt.Printf("   Organizations configured: %d\n", len(groupedPatterns))
+
+	// Display each organization and its patterns
+	for org, patterns := range groupedPatterns {
+		fmt.Printf("   - %s: %s\n", org, strings.Join(patterns, ", "))
+	}
+
+	fmt.Printf("   Priority: %d\n", priority)
+
+	// Display storage information
+	if backend == secrets.StorageBackendKeyring {
+		fmt.Println("   🔐 Storage: OS Keyring (encrypted)")
+		if expandedKeyFile != "" {
+			fmt.Printf("   📝 Fallback: %s\n", expandedKeyFile)
+		}
+	} else {
+		fmt.Println("   📁 Storage: Filesystem")
+		fmt.Printf("   📝 Key file: %s\n", expandedKeyFile)
+		fmt.Println("   ⚠️  Keyring unavailable - using filesystem storage")
+	}
+
+	fmt.Println("\n💡 Next steps:")
+	fmt.Println("   1. Test authentication: gh app-auth test --repo <repository-url>")
+	fmt.Println("   2. Sync git credential helper: gh app-auth gitconfig --sync --global")
+	fmt.Println("      # or run 'gh app-auth gitconfig --sync --local' inside a repository")
 }

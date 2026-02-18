@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
@@ -139,9 +140,9 @@ func TestValidateSetupInputs(t *testing.T) {
 			useFilesystem := tt.useFilesystem
 			keyFile := tt.keyFile
 			if tt.ghAppKeyEnvVar != "" {
-				os.Setenv("GH_APP_PRIVATE_KEY", tt.ghAppKeyEnvVar)
+				t.Setenv("GH_APP_PRIVATE_KEY", tt.ghAppKeyEnvVar)
 			} else {
-				os.Unsetenv("GH_APP_PRIVATE_KEY")
+				t.Setenv("GH_APP_PRIVATE_KEY", "")
 			}
 
 			err := validateSetupInputs(tt.appID, tt.patterns, &useKeyring, &useFilesystem, keyFile)
@@ -745,6 +746,240 @@ func TestSetupRun_Integration(t *testing.T) {
 			t.Errorf("Validation failed after storage configuration: %v", err)
 		}
 	})
+}
+
+func TestExtractUniqueOrgs(t *testing.T) {
+	tests := []struct {
+		name        string
+		patterns    []string
+		wantOrgs    []OrgPattern
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:     "single pattern single org",
+			patterns: []string{"github.com/org-a/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+			},
+		},
+		{
+			name:     "multiple patterns same org",
+			patterns: []string{"github.com/org-a/*", "github.com/org-a/repo"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/repo"},
+			},
+		},
+		{
+			name:     "multiple patterns different orgs",
+			patterns: []string{"github.com/org-a/*", "github.com/org-b/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+				{Host: "github.com", Org: "org-b", Pattern: "github.com/org-b/*"},
+			},
+		},
+		{
+			name:     "three different orgs",
+			patterns: []string{"github.com/org-a/*", "github.com/org-b/*", "github.com/org-c/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+				{Host: "github.com", Org: "org-b", Pattern: "github.com/org-b/*"},
+				{Host: "github.com", Org: "org-c", Pattern: "github.com/org-c/*"},
+			},
+		},
+		{
+			name:     "mixed patterns same and different orgs",
+			patterns: []string{"github.com/org-a/*", "github.com/org-a/repo1", "github.com/org-b/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/repo1"},
+				{Host: "github.com", Org: "org-b", Pattern: "github.com/org-b/*"},
+			},
+		},
+		{
+			name:     "enterprise github host",
+			patterns: []string{"github.enterprise.com/org-a/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.enterprise.com", Org: "org-a", Pattern: "github.enterprise.com/org-a/*"},
+			},
+		},
+		{
+			name:     "multiple enterprise hosts",
+			patterns: []string{"github.com/org-a/*", "github.enterprise.com/org-b/*"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/*"},
+				{Host: "github.enterprise.com", Org: "org-b", Pattern: "github.enterprise.com/org-b/*"},
+			},
+		},
+		{
+			name:        "empty patterns",
+			patterns:    []string{},
+			wantErr:     true,
+			errContains: "no patterns provided",
+		},
+		{
+			name:        "invalid pattern format",
+			patterns:    []string{"invalid-pattern"},
+			wantErr:     true,
+			errContains: "invalid pattern format",
+		},
+		{
+			name:     "patterns without wildcards",
+			patterns: []string{"github.com/org-a/repo1", "github.com/org-b/repo2"},
+			wantOrgs: []OrgPattern{
+				{Host: "github.com", Org: "org-a", Pattern: "github.com/org-a/repo1"},
+				{Host: "github.com", Org: "org-b", Pattern: "github.com/org-b/repo2"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := extractUniqueOrgs(tt.patterns)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("extractUniqueOrgs() error = nil, wantErr %v", tt.wantErr)
+					return
+				}
+				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("extractUniqueOrgs() error = %v, should contain %q", err, tt.errContains)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("extractUniqueOrgs() unexpected error = %v", err)
+				return
+			}
+
+			if len(got) != len(tt.wantOrgs) {
+				t.Errorf("extractUniqueOrgs() returned %d orgs, want %d", len(got), len(tt.wantOrgs))
+				return
+			}
+
+			for i, want := range tt.wantOrgs {
+				if got[i].Host != want.Host {
+					t.Errorf("extractUniqueOrgs()[%d].Host = %v, want %v", i, got[i].Host, want.Host)
+				}
+				if got[i].Org != want.Org {
+					t.Errorf("extractUniqueOrgs()[%d].Org = %v, want %v", i, got[i].Org, want.Org)
+				}
+				if got[i].Pattern != want.Pattern {
+					t.Errorf("extractUniqueOrgs()[%d].Pattern = %v, want %v", i, got[i].Pattern, want.Pattern)
+				}
+			}
+		})
+	}
+}
+
+func TestGroupPatternsByOrg(t *testing.T) {
+	tests := []struct {
+		name     string
+		patterns []string
+		wantMap  map[string][]string // org -> patterns
+	}{
+		{
+			name:     "single org multiple patterns",
+			patterns: []string{"github.com/org-a/*", "github.com/org-a/repo1"},
+			wantMap: map[string][]string{
+				"org-a": {"github.com/org-a/*", "github.com/org-a/repo1"},
+			},
+		},
+		{
+			name:     "two orgs with patterns",
+			patterns: []string{"github.com/org-a/*", "github.com/org-b/*", "github.com/org-a/repo1"},
+			wantMap: map[string][]string{
+				"org-a": {"github.com/org-a/*", "github.com/org-a/repo1"},
+				"org-b": {"github.com/org-b/*"},
+			},
+		},
+		{
+			name:     "three different orgs",
+			patterns: []string{"github.com/org-a/*", "github.com/org-b/*", "github.com/org-c/*"},
+			wantMap: map[string][]string{
+				"org-a": {"github.com/org-a/*"},
+				"org-b": {"github.com/org-b/*"},
+				"org-c": {"github.com/org-c/*"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := groupPatternsByOrg(tt.patterns)
+
+			if len(got) != len(tt.wantMap) {
+				t.Errorf("groupPatternsByOrg() returned %d groups, want %d", len(got), len(tt.wantMap))
+				return
+			}
+
+			for org, wantPatterns := range tt.wantMap {
+				gotPatterns, exists := got[org]
+				if !exists {
+					t.Errorf("groupPatternsByOrg() missing org %q", org)
+					continue
+				}
+				if len(gotPatterns) != len(wantPatterns) {
+					t.Errorf("groupPatternsByOrg()[%q] has %d patterns, want %d", org, len(gotPatterns), len(wantPatterns))
+				}
+			}
+		})
+	}
+}
+
+func TestSetupMultiOrgErrors(t *testing.T) {
+	tests := []struct {
+		name        string
+		patterns    []string
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:        "empty patterns should error",
+			patterns:    []string{},
+			wantErr:     true,
+			errContains: "no patterns provided",
+		},
+		{
+			name:        "invalid pattern should error",
+			patterns:    []string{"not-a-valid-pattern"},
+			wantErr:     true,
+			errContains: "invalid pattern",
+		},
+		{
+			name:     "valid single pattern should work",
+			patterns: []string{"github.com/org-a/*"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid multiple patterns should work",
+			patterns: []string{"github.com/org-a/*", "github.com/org-b/*"},
+			wantErr:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test that pattern validation works correctly
+			err := validateMultiPatternSetup(tt.patterns)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("validateMultiPatternSetup() error = nil, wantErr %v", tt.wantErr)
+					return
+				}
+				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+					t.Errorf("validateMultiPatternSetup() error = %v, should contain %q", err, tt.errContains)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("validateMultiPatternSetup() unexpected error = %v", err)
+				}
+			}
+		})
+	}
 }
 
 func TestDisplaySetupSuccess(t *testing.T) {
