@@ -99,7 +99,7 @@ go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 ```
 
 **CI (GitHub Actions)**:
-Use `skynet-core/nfpm@v1.5` action
+Install via `go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest` (official, always latest)
 
 ### Package Metadata
 

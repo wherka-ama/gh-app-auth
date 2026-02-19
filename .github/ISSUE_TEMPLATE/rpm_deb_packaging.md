@@ -29,11 +29,11 @@ Add native RPM (for RHEL/Fedora) and DEB (for Ubuntu/Debian) package creation an
 
 **Implementation approach:**
 
-1. **Tool Selection**: Use [nFPM](https://github.com/goreleaser/nfpm) - a Go-native, zero-dependency packager
+1. **Tool Selection**: Use [nFPM](https://github.com/goreleaser/nfpm) directly via `go install` - official GoReleaser project
    - Simpler than FPM (no Ruby dependencies)
    - Supports both DEB and RPM formats
-   - Active maintenance by GoReleaser team
-   - Available as GitHub Action
+   - Active maintenance by GoReleaser team (latest release: v2.45.0)
+   - Installed via `go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest`
 
 2. **Makefile targets** (local development):
    - `make package-deps` - Install nFPM tool
@@ -44,7 +44,7 @@ Add native RPM (for RHEL/Fedora) and DEB (for Ubuntu/Debian) package creation an
 3. **GitHub Actions workflow** (release automation):
    - New job `build-packages` in release.yml
    - Run after `cli/gh-extension-precompile` creates binaries
-   - Use `skynet-core/nfpm@v1.5` action
+   - Install nFPM via `go install` (official, always up-to-date)
    - Build matrix for amd64 and arm64 architectures
    - Upload packages to release assets
 
