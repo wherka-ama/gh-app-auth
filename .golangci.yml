@@ -81,6 +81,8 @@ linters:
         - G204
         - G304
         - G601
+        - G703  # Path traversal - false positive for CLI file operations
+        - G704  # SSRF - false positive for GitHub API calls
 
     lll:
       line-length: 120
