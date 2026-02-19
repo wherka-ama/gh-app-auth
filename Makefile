@@ -352,9 +352,11 @@ package-deps:
 	@echo "✅ nFPM installed to $(NFPM)"
 
 # Build DEB package for amd64
-package-deb: build
+package-deb: package-deps
 	@echo "Building DEB package for amd64..."
 	@mkdir -p dist
+	@echo "Building Linux amd64 binary..."
+	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
 	$(NFPM) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
@@ -372,9 +374,11 @@ package-deb-arm64: release
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_arm64.deb"
 
 # Build RPM package for amd64
-package-rpm: build
+package-rpm: package-deps
 	@echo "Building RPM package for amd64..."
 	@mkdir -p dist
+	@echo "Building Linux amd64 binary..."
+	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
 	$(NFPM) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm; \
