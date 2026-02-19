@@ -1,6 +1,6 @@
 # gh-app-auth Makefile
 
-.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test package-deps package-deb package-rpm packages
+.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test package-deb package-rpm packages
 
 # Default target
 help:
@@ -36,14 +36,13 @@ help:
 	@echo "  quality            Full quality check (all linters + tests + security)"
 	@echo "  release            Build release binaries for all platforms"
 	@echo ""
-	@echo "Packaging targets:"
-	@echo "  package-deps       Install nFPM packaging tool"
-	@echo "  package-deb        Build DEB package for amd64"
-	@echo "  package-deb-arm64  Build DEB package for arm64"
-	@echo "  package-rpm        Build RPM package for amd64"
-	@echo "  package-rpm-arm64  Build RPM package for arm64"
-	@echo "  packages           Build all packages (deb/rpm for amd64/arm64)"
-	@echo "  packages-local     Build packages for local architecture only"
+	@echo "Packaging targets (uses 'go run', no installation needed):"
+	@echo "  package-deb          Build DEB package for amd64"
+	@echo "  package-deb-arm64    Build DEB package for arm64 (requires 'make release')"
+	@echo "  package-rpm          Build RPM package for amd64"
+	@echo "  package-rpm-arm64    Build RPM package for arm64 (requires 'make release')"
+	@echo "  packages             Build all packages (deb/rpm for amd64/arm64)"
+	@echo "  packages-local       Build packages for local architecture only"
 	@echo ""
 	@echo "Presentation targets:"
 	@echo "  presentation-setup Install presentation tools (Mermaid CLI, filters)"
@@ -342,24 +341,21 @@ ci: deps validate-tools validate-lint-tools
 quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
 
-# Packaging targets
-.PHONY: package-deps package-deb package-deb-arm64 package-rpm package-rpm-arm64 packages packages-local
+# Packaging targets - use 'go run' to avoid installing tools in user's environment
+.PHONY: package-deb package-deb-arm64 package-rpm package-rpm-arm64 packages packages-local
 
-# Install nFPM packaging tool
-package-deps:
-	@echo "Installing nFPM packaging tool..."
-	go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
-	@echo "✅ nFPM installed to $(NFPM)"
+# nFPM command using go run (no installation to user's environment)
+NFPM_CMD := go run github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
 # Build DEB package for amd64
-package-deb: package-deps
+package-deb:
 	@echo "Building DEB package for amd64..."
 	@mkdir -p dist
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
 	rm nfpm-temp.yaml
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_amd64.deb"
 
@@ -369,19 +365,19 @@ package-deb-arm64: release
 	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
 	rm nfpm-temp.yaml
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_arm64.deb"
 
 # Build RPM package for amd64
-package-rpm: package-deps
+package-rpm:
 	@echo "Building RPM package for amd64..."
 	@mkdir -p dist
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm"
 
@@ -391,12 +387,12 @@ package-rpm-arm64: release
 	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm"
 
 # Build all packages (requires release binaries)
-packages: package-deps release package-deb package-rpm package-deb-arm64 package-rpm-arm64
+packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64
 	@echo ""
 	@echo "=========================================="
 	@echo "  All packages built successfully!"
@@ -404,7 +400,7 @@ packages: package-deps release package-deb package-rpm package-deb-arm64 package
 	@ls -lh dist/*.deb dist/*.rpm 2>/dev/null || echo "⚠️  Some packages may not have been created"
 
 # Build packages for local architecture only
-packages-local: package-deps
+packages-local:
 	@echo "Building packages for local architecture ($(shell go env GOARCH))..."
 	@mkdir -p dist
 	@echo "Building Linux binary for local architecture..."
@@ -412,15 +408,15 @@ packages-local: package-deps
 ifeq ($(shell go env GOARCH),amd64)
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_x86_64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (amd64)"
 else ifeq ($(shell go env GOARCH),arm64)
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
-	$(NFPM) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm64)"
 else
