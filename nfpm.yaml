@@ -6,7 +6,7 @@ platform: linux
 version: ${VERSION}
 section: utils
 priority: optional
-maintainer: AmadeusITGroup <maintainers@amadeus.com>
+maintainer: AmadeusITGroup <opensource@amadeus.com>
 description: GitHub CLI extension for GitHub App authentication
   gh-app-auth simplifies GitHub App authentication workflows
   by providing secure token generation and git credential
@@ -39,4 +39,4 @@ contents:
 # RPM-specific configuration
 rpm:
   group: System Environment/Base
-  packager: AmadeusITGroup <maintainers@amadeus.com>
+  packager: AmadeusITGroup <opensource@amadeus.com>

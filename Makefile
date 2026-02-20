@@ -39,9 +39,13 @@ help:
 	@echo "Packaging targets (all use 'go run', no installation):"
 	@echo "  package-deb          Build DEB package for amd64"
 	@echo "  package-deb-arm64    Build DEB package for arm64 (requires 'make release')"
+	@echo "  package-deb-386      Build DEB package for 386/i386 (requires 'make release')"
+	@echo "  package-deb-arm      Build DEB package for arm/armhf (requires 'make release')"
 	@echo "  package-rpm          Build RPM package for amd64"
 	@echo "  package-rpm-arm64    Build RPM package for arm64 (requires 'make release')"
-	@echo "  packages             Build all packages (deb/rpm for amd64/arm64)"
+	@echo "  package-rpm-386      Build RPM package for 386/i386 (requires 'make release')"
+	@echo "  package-rpm-arm      Build RPM package for arm/armv7hl (requires 'make release')"
+	@echo "  packages             Build all packages (deb/rpm for all architectures)"
 	@echo "  packages-local       Build packages for local architecture only"
 	@echo ""
 	@echo "Presentation targets (use npx, no global install):"
@@ -237,6 +241,12 @@ release: clean
 	# Linux ARM64
 	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
 	
+	# Linux 386 (i386)
+	GOOS=linux GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-386 .
+	
+	# Linux ARM (armv7)
+	GOOS=linux GOARCH=arm GOARM=7 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm .
+	
 	# macOS AMD64
 	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 .
 	
@@ -329,7 +339,7 @@ quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
 
 # Packaging targets - use 'go run' to avoid installing tools in user's environment
-.PHONY: package-deb package-deb-arm64 package-rpm package-rpm-arm64 packages packages-local
+.PHONY: package-deb package-deb-arm64 package-deb-386 package-deb-arm package-rpm package-rpm-arm64 package-rpm-386 package-rpm-arm packages packages-local
 
 # Build DEB package for amd64
 package-deb:
@@ -353,6 +363,26 @@ package-deb-arm64: release
 	rm nfpm-temp.yaml
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_arm64.deb"
 
+# Build DEB package for 386 (i386)
+package-deb-386: release
+	@echo "Building DEB package for 386..."
+	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=386 ARCH=386 VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_i386.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_i386.deb"
+
+# Build DEB package for arm (armhf)
+package-deb-arm: release
+	@echo "Building DEB package for arm..."
+	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm ARCH=arm VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_armhf.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_armhf.deb"
+
 # Build RPM package for amd64
 package-rpm:
 	@echo "Building RPM package for amd64..."
@@ -375,8 +405,28 @@ package-rpm-arm64: release
 	rm nfpm-temp.yaml
 	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm"
 
+# Build RPM package for 386 (i386/i686)
+package-rpm-386: release
+	@echo "Building RPM package for 386..."
+	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=386 ARCH=386 VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_i386.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)_i386.rpm"
+
+# Build RPM package for arm (armv7hl)
+package-rpm-arm: release
+	@echo "Building RPM package for arm..."
+	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm ARCH=arm VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_armv7hl.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)_armv7hl.rpm"
+
 # Build all packages (requires release binaries)
-packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64
+packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64 package-deb-386 package-rpm-386 package-deb-arm package-rpm-arm
 	@echo ""
 	@echo "=========================================="
 	@echo "  All packages built successfully!"
@@ -403,6 +453,20 @@ else ifeq ($(shell go env GOARCH),arm64)
 	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_aarch64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm64)"
+else ifeq ($(shell go env GOARCH),386)
+	@export GOARCH=386 ARCH=386 VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_i386.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_i386.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (386)"
+else ifeq ($(shell go env GOARCH),arm)
+	@export GOARCH=arm ARCH=arm VERSION=$(VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_armhf.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)_armv7hl.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (arm)"
 else
 	@echo "⚠️  Unsupported architecture: $(shell go env GOARCH)"
 	@exit 1
