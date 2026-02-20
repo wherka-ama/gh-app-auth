@@ -71,6 +71,20 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME}"
 
+          # Check if release exists and get its status
+          RELEASE_INFO=$(gh release view "$VERSION" --json isDraft 2>/dev/null || echo "null")
+
+          if [ "$RELEASE_INFO" != "null" ]; then
+            IS_DRAFT=$(echo "$RELEASE_INFO" | jq -r '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              echo "Deleting existing draft release $VERSION..."
+              gh release delete "$VERSION" --yes
+            else
+              echo "Release $VERSION already exists and is published. Skipping creation."
+              exit 0
+            fi
+          fi
+
           # Create release with all assets in one command
           gh release create "$VERSION" \
             --title "🚀 $VERSION" \
