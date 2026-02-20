@@ -2,7 +2,7 @@ name: Release
 
 on:
   release:
-    types: [created]
+    types: [prereleased]
 
 permissions:
   contents: write
@@ -64,29 +64,19 @@ jobs:
             rpm -qip "$rpm" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Group)" || \
               echo "rpm command not available for detailed info"
           done
-      - name: Create release and upload artifacts
+      - name: Upload artifacts and set release as latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${GITHUB_REF_NAME}"
+          VERSION="${{ github.event.release.tag_name }}"
 
-          # Check if release exists and get its status
-          RELEASE_INFO=$(gh release view "$VERSION" --json isDraft 2>/dev/null || echo "null")
+          # Note: the relase is assumed as created as prerelease
+          # The following section is aimmed at pushing the artifacts to the release
+          # and promoting it to latest
 
-          if [ "$RELEASE_INFO" != "null" ]; then
-            IS_DRAFT=$(echo "$RELEASE_INFO" | jq -r '.isDraft')
-            if [ "$IS_DRAFT" = "true" ]; then
-              echo "Deleting existing draft release $VERSION..."
-              gh release delete "$VERSION" --yes
-            else
-              echo "Release $VERSION already exists and is published. Skipping creation."
-              exit 0
-            fi
-          fi
-
-          # Create release with all assets in one command
-          gh release create "$VERSION" \
-            --title "🚀 $VERSION" \
-            --generate-notes \
-            dist/gh-app-auth-*
+          echo "Uploading artifacts to release $VERSION..."
+          gh release upload "$VERSION" dist/gh-app-auth-* --clobber
+  
+          echo "Setting release as latest..."
+          gh release edit "$VERSION" --prerelease=false --latest
 
