@@ -59,6 +59,7 @@ help:
 # Build variables
 BINARY_NAME := gh-app-auth
 VERSION := $(shell git describe --tags --exact-match 2>/dev/null || echo "dev")
+PKG_VERSION := $(shell echo "$(VERSION)" | sed 's/^v//')
 RPM_RELEASE ?= 1
 COMMIT := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -348,41 +349,41 @@ package-deb:
 	@mkdir -p dist
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
-	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION); \
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
 	rm nfpm-temp.yaml
-	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_amd64.deb"
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb"
 
 # Build DEB package for arm64
 package-deb-arm64: release
 	@echo "Building DEB package for arm64..."
 	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION); \
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
 	rm nfpm-temp.yaml
-	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_arm64.deb"
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb"
 
 # Build DEB package for 386 (i386)
 package-deb-386: release
 	@echo "Building DEB package for 386..."
 	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=386 ARCH=386 VERSION=$(VERSION); \
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_i386.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb; \
 	rm nfpm-temp.yaml
-	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_i386.deb"
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb"
 
 # Build DEB package for arm (armhf)
 package-deb-arm: release
 	@echo "Building DEB package for arm..."
 	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=arm ARCH=arm VERSION=$(VERSION); \
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION); \
 	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_armhf.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb; \
 	rm nfpm-temp.yaml
-	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(VERSION)_armhf.deb"
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb"
 
 # Build RPM package for amd64
 package-rpm:
@@ -390,41 +391,41 @@ package-rpm:
 	@mkdir -p dist
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
-	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
 	rm nfpm-temp.yaml
-	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_x86_64.rpm"
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm"
 
 # Build RPM package for arm64
 package-rpm-arm64: release
 	@echo "Building RPM package for arm64..."
 	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
 	rm nfpm-temp.yaml
-	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_aarch64.rpm"
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm"
 
 # Build RPM package for 386 (i386/i686)
 package-rpm-386: release
 	@echo "Building RPM package for 386..."
 	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=386 ARCH=386 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_i386.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm; \
 	rm nfpm-temp.yaml
-	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_i386.rpm"
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm"
 
 # Build RPM package for arm (armv7hl)
 package-rpm-arm: release
 	@echo "Building RPM package for arm..."
 	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
-	@export GOARCH=arm ARCH=arm VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
 	rm nfpm-temp.yaml
-	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_armv7hl.rpm"
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm"
 
 # Build all packages (requires release binaries)
 packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64 package-deb-386 package-rpm-386 package-deb-arm package-rpm-arm
@@ -441,31 +442,31 @@ packages-local:
 	@echo "Building Linux binary for local architecture..."
 	@GOOS=linux GOARCH=$(shell go env GOARCH) go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-$(shell go env GOARCH) .
 ifeq ($(shell go env GOARCH),amd64)
-	@export GOARCH=amd64 ARCH=amd64 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_amd64.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (amd64)"
 else ifeq ($(shell go env GOARCH),arm64)
-	@export GOARCH=arm64 ARCH=arm64 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_arm64.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm64)"
 else ifeq ($(shell go env GOARCH),386)
-	@export GOARCH=386 ARCH=386 VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_i386.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_i386.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (386)"
 else ifeq ($(shell go env GOARCH),arm)
-	@export GOARCH=arm ARCH=arm VERSION=$(VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
 	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(VERSION)_armhf.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm)"
 else
