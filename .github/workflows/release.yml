@@ -59,6 +59,9 @@ jobs:
           VERSION="${GITHUB_REF_NAME}"
           PKG_VERSION="${VERSION#v}"
           
+          # Delete existing release if it exists (allows re-running workflow)
+          gh release delete "$VERSION" --yes 2>/dev/null || echo "No existing release to delete"
+          
           # Create release with all assets in one command
           gh release create "$VERSION" \
             --title "🚀 $VERSION" \
