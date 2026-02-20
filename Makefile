@@ -1,6 +1,6 @@
 # gh-app-auth Makefile
 
-.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test
+.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test package-deb package-rpm packages
 
 # Default target
 help:
@@ -26,41 +26,57 @@ help:
 	@echo "  clean              Clean build artifacts"
 	@echo "  install            Install extension to GitHub CLI"
 	@echo "  uninstall          Uninstall extension from GitHub CLI"
-	@echo "  dev-setup          Set up development environment"
+	@echo "  dev-setup          Set up development environment (config only)"
 	@echo "  validate-tools     Validate core tools are installed"
-	@echo "  validate-lint-tools Validate linting tools are installed"
-	@echo "  security-scan      Run security scans"
+	@echo "  validate-lint-tools Validate linting tools can run via 'go run'"
+	@echo "  security-scan      Run security scans (gosec, govulncheck via go run)"
 	@echo "  deps               Download and verify dependencies"
 	@echo "  dev                Quick development cycle (fmt + lint + test + build)"
 	@echo "  ci                 CI pipeline simulation (mirrors GitHub CI)"
 	@echo "  quality            Full quality check (all linters + tests + security)"
 	@echo "  release            Build release binaries for all platforms"
 	@echo ""
-	@echo "Presentation targets:"
-	@echo "  presentation-setup Install presentation tools (Mermaid CLI, filters)"
+	@echo "Packaging targets (all use 'go run', no installation):"
+	@echo "  package-deb          Build DEB package for amd64"
+	@echo "  package-deb-arm64    Build DEB package for arm64 (requires 'make release')"
+	@echo "  package-deb-386      Build DEB package for 386/i386 (requires 'make release')"
+	@echo "  package-deb-arm      Build DEB package for arm/armhf (requires 'make release')"
+	@echo "  package-rpm          Build RPM package for amd64"
+	@echo "  package-rpm-arm64    Build RPM package for arm64 (requires 'make release')"
+	@echo "  package-rpm-386      Build RPM package for 386/i386 (requires 'make release')"
+	@echo "  package-rpm-arm      Build RPM package for arm/armv7hl (requires 'make release')"
+	@echo "  packages             Build all packages (deb/rpm for all architectures)"
+	@echo "  packages-local       Build packages for local architecture only"
+	@echo "  validate-packages    Verify binary/package architectures match targets"
+	@echo ""
+	@echo "Presentation targets (use npx, no global install):"
+	@echo "  presentation-setup Verify npx availability for Mermaid tools"
 	@echo "  presentation       Build both HTML and PDF presentations"
 	@echo "  presentation-html  Build interactive HTML presentation"
-	@echo "  presentation-pdf   Build PDF presentation (requires presentation-setup)"
+	@echo "  presentation-pdf   Build PDF presentation (uses npx mermaid-filter)"
 	@echo "  presentation-serve Serve presentation locally on :8000"
 	@echo "  presentation-clean Clean presentation build artifacts"
 
 # Build variables
 BINARY_NAME := gh-app-auth
 VERSION := $(shell git describe --tags --exact-match 2>/dev/null || echo "dev")
+PKG_VERSION := $(shell echo "$(VERSION)" | sed 's/^v//')
+RPM_RELEASE ?= 1
 COMMIT := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildTime=$(BUILD_TIME)"
 
-# Tool paths
-GOPATH := $(shell go env GOPATH)
-GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint
-GOIMPORTS := $(GOPATH)/bin/goimports
-STATICCHECK := $(GOPATH)/bin/staticcheck
-GOCYCLO := $(GOPATH)/bin/gocyclo
-INEFFASSIGN := $(GOPATH)/bin/ineffassign
-MISSPELL := $(GOPATH)/bin/misspell
-GOSEC := $(GOPATH)/bin/gosec
-GOVULNCHECK := $(GOPATH)/bin/govulncheck
+# Go tool commands using 'go run' (no installation to user's environment)
+GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+GOIMPORTS := go run golang.org/x/tools/cmd/goimports@latest
+STATICCHECK := go run honnef.co/go/tools/cmd/staticcheck@latest
+GOCYCLO := go run github.com/fzipp/gocyclo/cmd/gocyclo@latest
+INEFFASSIGN := go run github.com/gordonklaus/ineffassign@latest
+MISSPELL := go run github.com/client9/misspell/cmd/misspell@latest
+GOSEC := go run github.com/securego/gosec/v2/cmd/gosec@latest
+GOVULNCHECK := go run golang.org/x/vuln/cmd/govulncheck@latest
+ACTIONLINT := go run github.com/rhysd/actionlint/cmd/actionlint@latest
+NFPM_CMD := go run github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
 
 # Build the extension
 build:
@@ -101,35 +117,35 @@ test-coverage-check:
 		echo "✅ Coverage $$COVERAGE% meets threshold $(COVERAGE_THRESHOLD)%"; \
 	fi
 
-# Lint code with golangci-lint (comprehensive)
+# Lint code with golangci-lint using go run (no installation)
 lint:
 	@echo "Running golangci-lint..."
-	$(GOLANGCI_LINT) run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run
 
 # Run go vet
 vet:
 	@echo "Running go vet..."
 	go vet ./...
 
-# Run staticcheck
+# Run staticcheck using go run (no installation)
 staticcheck:
 	@echo "Running staticcheck..."
-	$(STATICCHECK) ./...
+	go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
-# Run gocyclo (cyclomatic complexity)
+# Run gocyclo (cyclomatic complexity) using go run (no installation)
 gocyclo:
 	@echo "Running gocyclo (complexity threshold: 10)..."
-	$(GOCYCLO) -over 10 . || echo "⚠️  High complexity functions found (expected for CLI commands)"
+	go run github.com/fzipp/gocyclo/cmd/gocyclo@latest -over 10 . || echo "⚠️  High complexity functions found (expected for CLI commands)"
 
-# Run ineffassign (ineffectual assignments)
+# Run ineffassign (ineffectual assignments) using go run (no installation)
 ineffassign:
 	@echo "Running ineffassign..."
-	$(INEFFASSIGN) ./...
+	go run github.com/gordonklaus/ineffassign@latest ./...
 
-# Run misspell (spelling checker)
+# Run misspell (spelling checker) using go run (no installation)
 misspell:
 	@echo "Running misspell..."
-	$(MISSPELL) -error .
+	go run github.com/client9/misspell/cmd/misspell@latest -error .
 
 # Run markdownlint (requires npx/node)
 markdownlint:
@@ -143,11 +159,10 @@ yamllint:
 	@command -v yamllint >/dev/null 2>&1 || { echo "⚠️  yamllint not found, skipping (install: pip install yamllint)"; exit 0; }
 	yamllint -d relaxed . || echo "⚠️  YAML lint issues found"
 
-# Run actionlint on GitHub workflow files (requires actionlint binary)
+# Run actionlint on GitHub workflow files using go run (no installation)
 actionlint:
 	@echo "Running actionlint..."
-	@command -v actionlint >/dev/null 2>&1 || { echo "⚠️  actionlint not found, skipping (install: go install github.com/rhysd/actionlint/cmd/actionlint@latest)"; exit 0; }
-	actionlint || echo "⚠️  Action lint issues found"
+	@go run github.com/rhysd/actionlint/cmd/actionlint@latest || echo "⚠️  Action lint issues found"
 
 # CLI smoke test - verify binary works
 cli-smoke-test: build
@@ -160,11 +175,11 @@ cli-smoke-test: build
 lint-all: vet staticcheck gocyclo ineffassign misspell markdownlint yamllint actionlint
 	@echo "All individual linters completed!"
 
-# Format code
+# Format code using go run (no installation)
 fmt:
 	@echo "Formatting code..."
+	go run golang.org/x/tools/cmd/goimports@latest -w .
 	gofmt -s -w .
-	$(GOIMPORTS) -w .
 
 # Clean build artifacts
 clean:
@@ -183,19 +198,10 @@ uninstall:
 	@echo "Uninstalling extension from GitHub CLI..."
 	gh extension remove app-auth || true
 
-# Set up development environment
+# Set up development environment (configuration only, no tool installation)
 dev-setup:
 	@echo "Setting up development environment..."
 	go mod download
-	@echo "Installing linting tools..."
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-	go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
-	go install github.com/gordonklaus/ineffassign@latest
-	go install github.com/client9/misspell/cmd/misspell@latest
-	go install golang.org/x/vuln/cmd/govulncheck@latest
 	@echo "Setting up git commit template..."
 	git config commit.template .gitmessage
 	@echo "Development environment ready!"
@@ -203,25 +209,22 @@ dev-setup:
 	@echo "💡 Tip: Use 'git commit' (without -m) to use the conventional commit template"
 	@echo "📖 See CONTRIBUTING.md for conventional commit guidelines"
 
-# Set up presentation tools
+# Set up presentation tools using npx (no global installation)
 presentation-setup:
 	@echo "Setting up presentation tools..."
 	@command -v npm >/dev/null 2>&1 || { echo "npm is required. Install Node.js first"; exit 1; }
-	@echo "Installing Mermaid CLI..."
-	npm install -g @mermaid-js/mermaid-cli
-	@echo "Installing mermaid-filter..."
-	npm install -g mermaid-filter
-	@echo "Presentation tools installed!"
+	@echo "Verifying npx is available..."
+	@command -v npx >/dev/null 2>&1 || { echo "npx not found. Install Node.js properly"; exit 1; }
+	@echo "✅ npx available for mermaid-cli and mermaid-filter"
 	@echo ""
-	@echo "✅ Mermaid CLI: $(shell which mmdc 2>/dev/null || echo 'not found')"
-	@npm list -g mermaid-filter >/dev/null 2>&1 && echo "✅ mermaid-filter: installed" || echo "❌ mermaid-filter: not found"
+	@echo "Presentation tools ready (will use npx at runtime)!"
 
-# Run security scans
+# Run security scans using go run (no installation)
 security-scan:
 	@echo "Running security scans..."
-	$(GOSEC) -fmt sarif -out gosec.sarif ./... || true
+	go run github.com/securego/gosec/v2/cmd/gosec@latest -fmt sarif -out gosec.sarif ./... || true
 	@echo "Running vulnerability check..."
-	$(GOVULNCHECK) ./... || true
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./... || true
 
 # Download and verify dependencies  
 deps:
@@ -236,22 +239,28 @@ release: clean
 	mkdir -p dist
 	
 	# Linux AMD64
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
 	
 	# Linux ARM64
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
+	
+	# Linux 386 (i386)
+	CGO_ENABLED=0 GOOS=linux GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-386 .
+	
+	# Linux ARM (armv7)
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm .
 	
 	# macOS AMD64
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 .
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 .
 	
 	# macOS ARM64 (Apple Silicon)
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 .
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 .
 	
 	# Windows AMD64
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe .
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe .
 	
 	# Windows ARM64
-	GOOS=windows GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe .
+	CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe .
 	
 	@echo "Release binaries built in dist/"
 	@ls -la dist/
@@ -264,18 +273,18 @@ validate-tools:
 	@command -v git >/dev/null 2>&1 || { echo "❌ Git is required but not installed"; exit 1; }
 	@echo "✅ Core tools are installed."
 
-# Validate that all linting tools are installed
+# Validate that linting tools can be run (check go run works)
 validate-lint-tools:
-	@echo "Validating linting tools..."
-	@test -f $(GOLANGCI_LINT) || { echo "❌ golangci-lint not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOIMPORTS) || { echo "❌ goimports not found. Run: make dev-setup"; exit 1; }
-	@test -f $(STATICCHECK) || { echo "❌ staticcheck not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOCYCLO) || { echo "❌ gocyclo not found. Run: make dev-setup"; exit 1; }
-	@test -f $(INEFFASSIGN) || { echo "❌ ineffassign not found. Run: make dev-setup"; exit 1; }
-	@test -f $(MISSPELL) || { echo "❌ misspell not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOSEC) || { echo "❌ gosec not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOVULNCHECK) || { echo "❌ govulncheck not found. Run: make dev-setup"; exit 1; }
-	@echo "✅ All linting tools are installed."
+	@echo "Validating linting tools can be executed via 'go run'..."
+	@go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest version >/dev/null 2>&1 || { echo "❌ golangci-lint failed via go run"; exit 1; }
+	@go run golang.org/x/tools/cmd/goimports@latest -l . >/dev/null 2>&1 || { echo "❌ goimports failed via go run"; exit 1; }
+	@go run honnef.co/go/tools/cmd/staticcheck@latest --help >/dev/null 2>&1 || { echo "❌ staticcheck failed via go run"; exit 1; }
+	@go run github.com/fzipp/gocyclo/cmd/gocyclo@latest . >/dev/null 2>&1 || { echo "❌ gocyclo failed via go run"; exit 1; }
+	@go run github.com/gordonklaus/ineffassign@latest . >/dev/null 2>&1 || { echo "❌ ineffassign failed via go run"; exit 1; }
+	@go run github.com/client9/misspell/cmd/misspell@latest --help >/dev/null 2>&1 || { echo "❌ misspell failed via go run"; exit 1; }
+	@go run github.com/securego/gosec/v2/cmd/gosec@latest --help >/dev/null 2>&1 || { echo "❌ gosec failed via go run"; exit 1; }
+	@go run golang.org/x/vuln/cmd/govulncheck@latest --help >/dev/null 2>&1 || { echo "❌ govulncheck failed via go run"; exit 1; }
+	@echo "✅ All linting tools work via 'go run'"
 
 # Quick development cycle
 dev: fmt lint test build
@@ -331,6 +340,186 @@ ci: deps validate-tools validate-lint-tools
 # Full quality check (all linters + tests)
 quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
+
+# Packaging targets - use 'go run' to avoid installing tools in user's environment
+.PHONY: package-deb package-deb-arm64 package-deb-386 package-deb-arm package-rpm package-rpm-arm64 package-rpm-386 package-rpm-arm packages packages-local validate-packages
+
+# Build DEB package for amd64
+package-deb:
+	@echo "Building DEB package for amd64..."
+	@mkdir -p dist
+	@echo "Building Linux amd64 binary..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb"
+
+# Build DEB package for arm64
+package-deb-arm64: release
+	@echo "Building DEB package for arm64..."
+	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb"
+
+# Build DEB package for 386 (i386)
+package-deb-386: release
+	@echo "Building DEB package for 386..."
+	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb"
+
+# Build DEB package for arm (armhf)
+package-deb-arm: release
+	@echo "Building DEB package for arm..."
+	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION); \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb; \
+	rm nfpm-temp.yaml
+	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb"
+
+# Build RPM package for amd64
+package-rpm:
+	@echo "Building RPM package for amd64..."
+	@mkdir -p dist
+	@echo "Building Linux amd64 binary..."
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm"
+
+# Build RPM package for arm64
+package-rpm-arm64: release
+	@echo "Building RPM package for arm64..."
+	@test -f dist/$(BINARY_NAME)-linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm"
+
+# Build RPM package for 386 (i386/i686)
+package-rpm-386: release
+	@echo "Building RPM package for 386..."
+	@test -f dist/$(BINARY_NAME)-linux-386 || { echo "❌ Linux 386 binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm"
+
+# Build RPM package for arm (armv7hl)
+package-rpm-arm: release
+	@echo "Building RPM package for arm..."
+	@test -f dist/$(BINARY_NAME)-linux-arm || { echo "❌ Linux ARM binary not found. Run 'make release' first."; exit 1; }
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm"
+
+# Build all packages (requires release binaries)
+packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64 package-deb-386 package-rpm-386 package-deb-arm package-rpm-arm
+	@echo ""
+	@echo "=========================================="
+	@echo "  All packages built successfully!"
+	@echo "=========================================="
+	@ls -lh dist/*.deb dist/*.rpm 2>/dev/null || echo "⚠️  Some packages may not have been created"
+
+# Validate package architectures match targets
+validate-packages:
+	@echo "Validating binary and package architectures..."
+	@echo ""
+	@echo "=== Linux Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-linux-*; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|ARM aarch64|Intel 80386|ARM EABI)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== macOS Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-darwin-*; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|arm64)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== Windows Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-windows-*.exe; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|Aarch64)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== DEB Package Architecture Verification ==="
+	@for deb in dist/*.deb; do \
+		if [ -f "$$deb" ]; then \
+			echo -n "$$deb: "; \
+			dpkg-deb -I "$$deb" | grep Architecture | awk '{print $$2}'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== RPM Package Architecture Verification ==="
+	@for rpm in dist/*.rpm; do \
+		if [ -f "$$rpm" ]; then \
+			echo -n "$$rpm: "; \
+			rpm -qip "$$rpm" 2>/dev/null | grep Architecture | awk '{print $$2}' || echo "N/A (rpm not installed)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "✅ Validation complete!"
+
+# Build packages for local architecture only
+packages-local:
+	@echo "Building packages for local architecture ($(shell go env GOARCH))..."
+	@mkdir -p dist
+	@echo "Building Linux binary for local architecture..."
+	@GOOS=linux GOARCH=$(shell go env GOARCH) CGO_ENABLED=0 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-$(shell go env GOARCH) .
+ifeq ($(shell go env GOARCH),amd64)
+	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (amd64)"
+else ifeq ($(shell go env GOARCH),arm64)
+	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (arm64)"
+else ifeq ($(shell go env GOARCH),386)
+	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (386)"
+else ifeq ($(shell go env GOARCH),arm)
+	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb; \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
+	rm nfpm-temp.yaml
+	@echo "✅ Local packages created (arm)"
+else
+	@echo "⚠️  Unsupported architecture: $(shell go env GOARCH)"
+	@exit 1
+endif
 
 # Presentation targets
 .PHONY: presentation presentation-setup presentation-html presentation-pdf presentation-serve presentation-clean
