@@ -47,6 +47,7 @@ help:
 	@echo "  package-rpm-arm      Build RPM package for arm/armv7hl (requires 'make release')"
 	@echo "  packages             Build all packages (deb/rpm for all architectures)"
 	@echo "  packages-local       Build packages for local architecture only"
+	@echo "  validate-packages    Verify binary/package architectures match targets"
 	@echo ""
 	@echo "Presentation targets (use npx, no global install):"
 	@echo "  presentation-setup Verify npx availability for Mermaid tools"
@@ -341,7 +342,7 @@ quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
 
 # Packaging targets - use 'go run' to avoid installing tools in user's environment
-.PHONY: package-deb package-deb-arm64 package-deb-386 package-deb-arm package-rpm package-rpm-arm64 package-rpm-386 package-rpm-arm packages packages-local
+.PHONY: package-deb package-deb-arm64 package-deb-386 package-deb-arm package-rpm package-rpm-arm64 package-rpm-386 package-rpm-arm packages packages-local validate-packages
 
 # Build DEB package for amd64
 package-deb:
@@ -434,6 +435,52 @@ packages: release package-deb package-rpm package-deb-arm64 package-rpm-arm64 pa
 	@echo "  All packages built successfully!"
 	@echo "=========================================="
 	@ls -lh dist/*.deb dist/*.rpm 2>/dev/null || echo "⚠️  Some packages may not have been created"
+
+# Validate package architectures match targets
+validate-packages:
+	@echo "Validating binary and package architectures..."
+	@echo ""
+	@echo "=== Linux Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-linux-*; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|ARM aarch64|Intel 80386|ARM EABI)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== macOS Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-darwin-*; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|arm64)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== Windows Binary Architecture Verification ==="
+	@for binary in dist/gh-app-auth-windows-*.exe; do \
+		if [ -f "$$binary" ]; then \
+			echo -n "$$binary: "; \
+			file $$binary | grep -oP '(x86-64|Aarch64)'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== DEB Package Architecture Verification ==="
+	@for deb in dist/*.deb; do \
+		if [ -f "$$deb" ]; then \
+			echo -n "$$deb: "; \
+			dpkg-deb -I "$$deb" | grep Architecture | awk '{print $$2}'; \
+		fi; \
+	done
+	@echo ""
+	@echo "=== RPM Package Architecture Verification ==="
+	@for rpm in dist/*.rpm; do \
+		if [ -f "$$rpm" ]; then \
+			echo -n "$$rpm: "; \
+			rpm -qip "$$rpm" 2>/dev/null | grep Architecture | awk '{print $$2}' || echo "N/A (rpm not installed)"; \
+		fi; \
+	done
+	@echo ""
+	@echo "✅ Validation complete!"
 
 # Build packages for local architecture only
 packages-local:
