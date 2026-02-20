@@ -341,7 +341,7 @@ ci: deps validate-tools validate-lint-tools
 quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
 
-# Packaging targets - use 'go run' to avoid installing tools in user's environment
+# Packaging targets
 .PHONY: package-deb package-deb-arm64 package-deb-386 package-deb-arm package-rpm package-rpm-arm64 package-rpm-386 package-rpm-arm packages packages-local validate-packages
 
 # Build DEB package for amd64
