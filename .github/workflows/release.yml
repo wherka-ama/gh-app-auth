@@ -19,33 +19,80 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
-          cache: false  # Avoid cache conflict with gh-extension-precompile
+          go-version: '1.25'
+          cache: true
+
+      - name: Install tools (if needed)
+        run: |
+          # Check if envsubst is available, install only if missing
+          if ! command -v envsubst &> /dev/null; then
+            echo "envsubst not found, installing gettext-base..."
+            sudo apt-get update && sudo apt-get install -y gettext-base
+          else
+            echo "envsubst is already available"
+          fi
 
       - name: Run tests
         run: go test ./...
 
-      - name: Prepare Release
+      - name: Build release binaries and packages
+        run: |
+          # Set version from tag (strip 'v' prefix for package version)
+          VERSION="${GITHUB_REF_NAME#v}"
+          export VERSION
+          export RPM_RELEASE=1
+          echo "Building version: $VERSION"
+          echo "RPM release: $RPM_RELEASE"
+
+          # Build all binaries (8 architectures) and packages (8 packages)
+          make release packages
+
+          # List all built artifacts
+          echo ""
+          echo "=== Built artifacts ==="
+          ls -lh dist/
+
+      - name: Create release and upload artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Delete existing release if it exists (allows re-running)
-          gh release delete ${{ github.ref_name }} --yes 2>/dev/null || true
+          VERSION="${GITHUB_REF_NAME}"
+          PKG_VERSION="${VERSION#v}"
 
-          # Create draft release with generated notes (precompile will add assets)
-          gh release create ${{ github.ref_name }} \
-            --title "🚀 ${{ github.ref_name }}" \
+          # Delete existing release if it exists (allows re-running workflow)
+          gh release delete "$VERSION" --yes 2>/dev/null || echo "No existing release to delete"
+
+          # Create release with all assets in one command
+          gh release create "$VERSION" \
+            --title "🚀 $VERSION" \
             --generate-notes \
-            --draft=true
+            dist/gh-app-auth-linux-* \
+            dist/gh-app-auth-darwin-* \
+            dist/gh-app-auth-windows-* \
+            dist/gh-app-auth_"${PKG_VERSION}"_amd64.deb \
+            dist/gh-app-auth_"${PKG_VERSION}"_arm64.deb \
+            dist/gh-app-auth_"${PKG_VERSION}"_i386.deb \
+            dist/gh-app-auth_"${PKG_VERSION}"_armhf.deb \
+            dist/gh-app-auth_"${PKG_VERSION}"-1_x86_64.rpm \
+            dist/gh-app-auth_"${PKG_VERSION}"-1_aarch64.rpm \
+            dist/gh-app-auth_"${PKG_VERSION}"-1_i386.rpm \
+            dist/gh-app-auth_"${PKG_VERSION}"-1_armv7hl.rpm
 
-      - name: Create cross-platform builds
-        uses: cli/gh-extension-precompile@v2
-        with:
-          go_version: "1.21"
-
-      - name: Publish Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify packages
         run: |
-          # Publish the draft release
-          gh release edit ${{ github.ref_name }} --draft=false
+          PKG_VERSION="${GITHUB_REF_NAME#v}"
+          export PKG_VERSION
+
+          echo "=== DEB Package Info ==="
+          for deb in dist/*.deb; do
+            echo "--- $deb ---"
+            dpkg-deb -I "$deb" | grep -E "(Package|Version|Architecture|Maintainer)"
+          done
+
+          echo ""
+          echo "=== RPM Package Info ==="
+          for rpm in dist/*.rpm; do
+            echo "--- $rpm ---"
+            rpm -qip "$rpm" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Group)" || \
+              echo "rpm command not available for detailed info"
+          done
