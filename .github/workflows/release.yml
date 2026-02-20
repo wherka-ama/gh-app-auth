@@ -19,12 +19,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.25'
+          cache: true
 
-      - name: Install tools
+      - name: Install tools (if needed)
         run: |
-          # Install envsubst for nfpm.yaml variable expansion
-          sudo apt-get update && sudo apt-get install -y gettext-base
+          # Check if envsubst is available, install only if missing
+          if ! command -v envsubst &> /dev/null; then
+            echo "envsubst not found, installing gettext-base..."
+            sudo apt-get update && sudo apt-get install -y gettext-base
+          else
+            echo "envsubst is already available"
+          fi
 
       - name: Run tests
         run: go test ./...
