@@ -4,6 +4,7 @@ name: gh-app-auth
 arch: ${ARCH}
 platform: linux
 version: ${VERSION}
+release: ${RPM_RELEASE}
 section: utils
 priority: optional
 maintainer: AmadeusITGroup <opensource@amadeus.com>
