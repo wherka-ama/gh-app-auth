@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version: '1.21'
           cache: true
 
       - name: Install tools (if needed)
@@ -44,45 +44,14 @@ jobs:
           echo "Building version: $VERSION"
           echo "RPM release: $RPM_RELEASE"
 
-          # Build all binaries (8 architectures) and packages (8 packages)
           make release packages
 
           # List all built artifacts
           echo ""
           echo "=== Built artifacts ==="
           ls -lh dist/
-
-      - name: Create release and upload artifacts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION="${GITHUB_REF_NAME}"
-          PKG_VERSION="${VERSION#v}"
-
-          # Delete existing release if it exists (allows re-running workflow)
-          gh release delete "$VERSION" --yes 2>/dev/null || echo "No existing release to delete"
-
-          # Create release with all assets in one command
-          gh release create "$VERSION" \
-            --title "🚀 $VERSION" \
-            --generate-notes \
-            dist/gh-app-auth-linux-* \
-            dist/gh-app-auth-darwin-* \
-            dist/gh-app-auth-windows-* \
-            dist/gh-app-auth_"${PKG_VERSION}"_amd64.deb \
-            dist/gh-app-auth_"${PKG_VERSION}"_arm64.deb \
-            dist/gh-app-auth_"${PKG_VERSION}"_i386.deb \
-            dist/gh-app-auth_"${PKG_VERSION}"_armhf.deb \
-            dist/gh-app-auth_"${PKG_VERSION}"-1_x86_64.rpm \
-            dist/gh-app-auth_"${PKG_VERSION}"-1_aarch64.rpm \
-            dist/gh-app-auth_"${PKG_VERSION}"-1_i386.rpm \
-            dist/gh-app-auth_"${PKG_VERSION}"-1_armv7hl.rpm
-
-      - name: Verify packages
-        run: |
-          PKG_VERSION="${GITHUB_REF_NAME#v}"
-          export PKG_VERSION
-
+          
+          # Display package metadata
           echo "=== DEB Package Info ==="
           for deb in dist/*.deb; do
             echo "--- $deb ---"
@@ -96,3 +65,15 @@ jobs:
             rpm -qip "$rpm" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Group)" || \
               echo "rpm command not available for detailed info"
           done
+      - name: Create release and upload artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+
+          # Create release with all assets in one command
+          gh release create "$VERSION" \
+            --title "🚀 $VERSION" \
+            --generate-notes \
+            dist/gh-app-auth-*
+

@@ -11,13 +11,14 @@ maintainer: AmadeusITGroup <opensource@amadeus.com>
 description: GitHub CLI extension for GitHub App authentication
   gh-app-auth simplifies GitHub App authentication workflows
   by providing secure token generation and git credential
-  helper integration for the GitHub CLI.
+  helper integration for the GitHub CLI. It can be used
+  as a standalone tool or as a gh extension.
 license: Apache-2.0
 homepage: https://github.com/AmadeusITGroup/gh-app-auth
 depends:
-  - gh
-recommends:
   - git
+recommends:
+  - gh
 contents:
   - src: ./dist/gh-app-auth-linux-${GOARCH}
     dst: /usr/bin/gh-app-auth
