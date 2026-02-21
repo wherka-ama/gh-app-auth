@@ -26,10 +26,10 @@ help:
 	@echo "  clean              Clean build artifacts"
 	@echo "  install            Install extension to GitHub CLI"
 	@echo "  uninstall          Uninstall extension from GitHub CLI"
-	@echo "  dev-setup          Set up development environment"
+	@echo "  dev-setup          Set up development environment (config only)"
 	@echo "  validate-tools     Validate core tools are installed"
-	@echo "  validate-lint-tools Validate linting tools are installed"
-	@echo "  security-scan      Run security scans"
+	@echo "  validate-lint-tools Validate linting tools can run"
+	@echo "  security-scan      Run security scans (gosec, govulncheck)"
 	@echo "  deps               Download and verify dependencies"
 	@echo "  dev                Quick development cycle (fmt + lint + test + build)"
 	@echo "  ci                 CI pipeline simulation (mirrors GitHub CI)"
@@ -37,10 +37,9 @@ help:
 	@echo "  release            Build release binaries for all platforms"
 	@echo ""
 	@echo "Presentation targets:"
-	@echo "  presentation-setup Install presentation tools (Mermaid CLI, filters)"
 	@echo "  presentation       Build both HTML and PDF presentations"
 	@echo "  presentation-html  Build interactive HTML presentation"
-	@echo "  presentation-pdf   Build PDF presentation (requires presentation-setup)"
+	@echo "  presentation-pdf   Build PDF presentation"
 	@echo "  presentation-serve Serve presentation locally on :8000"
 	@echo "  presentation-clean Clean presentation build artifacts"
 
@@ -51,16 +50,16 @@ COMMIT := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildTime=$(BUILD_TIME)"
 
-# Tool paths
-GOPATH := $(shell go env GOPATH)
-GOLANGCI_LINT := $(GOPATH)/bin/golangci-lint
-GOIMPORTS := $(GOPATH)/bin/goimports
-STATICCHECK := $(GOPATH)/bin/staticcheck
-GOCYCLO := $(GOPATH)/bin/gocyclo
-INEFFASSIGN := $(GOPATH)/bin/ineffassign
-MISSPELL := $(GOPATH)/bin/misspell
-GOSEC := $(GOPATH)/bin/gosec
-GOVULNCHECK := $(GOPATH)/bin/govulncheck
+# Go tool commands
+GOLANGCI_LINT := go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+GOIMPORTS := go run golang.org/x/tools/cmd/goimports@latest
+STATICCHECK := go run honnef.co/go/tools/cmd/staticcheck@latest
+GOCYCLO := go run github.com/fzipp/gocyclo/cmd/gocyclo@latest
+INEFFASSIGN := go run github.com/gordonklaus/ineffassign@latest
+MISSPELL := go run github.com/client9/misspell/cmd/misspell@latest
+GOSEC := go run github.com/securego/gosec/v2/cmd/gosec@latest
+GOVULNCHECK := go run golang.org/x/vuln/cmd/govulncheck@latest
+ACTIONLINT := go run github.com/rhysd/actionlint/cmd/actionlint@latest
 
 # Build the extension
 build:
@@ -101,7 +100,7 @@ test-coverage-check:
 		echo "✅ Coverage $$COVERAGE% meets threshold $(COVERAGE_THRESHOLD)%"; \
 	fi
 
-# Lint code with golangci-lint (comprehensive)
+# Lint code with golangci-lint
 lint:
 	@echo "Running golangci-lint..."
 	$(GOLANGCI_LINT) run
@@ -143,11 +142,10 @@ yamllint:
 	@command -v yamllint >/dev/null 2>&1 || { echo "⚠️  yamllint not found, skipping (install: pip install yamllint)"; exit 0; }
 	yamllint -d relaxed . || echo "⚠️  YAML lint issues found"
 
-# Run actionlint on GitHub workflow files (requires actionlint binary)
+# Run actionlint on GitHub workflow files
 actionlint:
 	@echo "Running actionlint..."
-	@command -v actionlint >/dev/null 2>&1 || { echo "⚠️  actionlint not found, skipping (install: go install github.com/rhysd/actionlint/cmd/actionlint@latest)"; exit 0; }
-	actionlint || echo "⚠️  Action lint issues found"
+	@$(ACTIONLINT) || echo "⚠️  Action lint issues found"
 
 # CLI smoke test - verify binary works
 cli-smoke-test: build
@@ -163,8 +161,8 @@ lint-all: vet staticcheck gocyclo ineffassign misspell markdownlint yamllint act
 # Format code
 fmt:
 	@echo "Formatting code..."
-	gofmt -s -w .
 	$(GOIMPORTS) -w .
+	gofmt -s -w .
 
 # Clean build artifacts
 clean:
@@ -183,38 +181,16 @@ uninstall:
 	@echo "Uninstalling extension from GitHub CLI..."
 	gh extension remove app-auth || true
 
-# Set up development environment
+# Set up development environment (configuration only, no tool installation)
 dev-setup:
 	@echo "Setting up development environment..."
 	go mod download
-	@echo "Installing linting tools..."
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/securego/gosec/v2/cmd/gosec@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
-	go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
-	go install github.com/gordonklaus/ineffassign@latest
-	go install github.com/client9/misspell/cmd/misspell@latest
-	go install golang.org/x/vuln/cmd/govulncheck@latest
 	@echo "Setting up git commit template..."
 	git config commit.template .gitmessage
 	@echo "Development environment ready!"
 	@echo ""
 	@echo "💡 Tip: Use 'git commit' (without -m) to use the conventional commit template"
 	@echo "📖 See CONTRIBUTING.md for conventional commit guidelines"
-
-# Set up presentation tools
-presentation-setup:
-	@echo "Setting up presentation tools..."
-	@command -v npm >/dev/null 2>&1 || { echo "npm is required. Install Node.js first"; exit 1; }
-	@echo "Installing Mermaid CLI..."
-	npm install -g @mermaid-js/mermaid-cli
-	@echo "Installing mermaid-filter..."
-	npm install -g mermaid-filter
-	@echo "Presentation tools installed!"
-	@echo ""
-	@echo "✅ Mermaid CLI: $(shell which mmdc 2>/dev/null || echo 'not found')"
-	@npm list -g mermaid-filter >/dev/null 2>&1 && echo "✅ mermaid-filter: installed" || echo "❌ mermaid-filter: not found"
 
 # Run security scans
 security-scan:
@@ -223,36 +199,49 @@ security-scan:
 	@echo "Running vulnerability check..."
 	$(GOVULNCHECK) ./... || true
 
-# Download and verify dependencies  
+# Download and verify dependencies
 deps:
 	@echo "Downloading dependencies..."
 	go mod download
 	go mod verify
 	go mod tidy
 
+# Build matrix: os-arch (gh extension install compatible)
+# Format: OS-ARCH (no prefix, no dots, windows has .exe)
+# Based on download analysis:
+#   linux-amd64: 16999 (critical - primary platform)
+#   darwin-arm64: 12, darwin-amd64: 9 (real but low usage)
+#   windows/*: 8 each (likely checks only, but kept for completeness)
+#   freebsd/*: 8 each (likely checks only - commented out)
+BUILD_MATRIX := \
+	linux-amd64 \
+	linux-arm64 \
+	darwin-amd64 \
+	darwin-arm64 \
+	windows-amd64:.exe \
+	windows-arm64:.exe
+
+# Additional platforms (uncomment if needed):
+# windows-386:.exe, linux-386, linux-arm, freebsd-amd64, freebsd-arm64, freebsd-386
+
 # Build release binaries
 release: clean
 	@echo "Building release binaries..."
 	mkdir -p dist
-	
-	# Linux AMD64
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
-	
-	# Linux ARM64
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
-	
-	# macOS AMD64
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 .
-	
-	# macOS ARM64 (Apple Silicon)
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 .
-	
-	# Windows AMD64
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe .
-	
-	# Windows ARM64
-	GOOS=windows GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe .
-	
+	@echo "Build matrix: $(BUILD_MATRIX)"
+	@echo ""
+	$(foreach entry,$(BUILD_MATRIX),\
+		$(eval platform := $(entry)) \
+		$(eval ext := $(word 2,$(subst :, ,$(entry)))) \
+		$(eval platform_clean := $(word 1,$(subst :, ,$(entry)))) \
+		$(eval os := $(word 1,$(subst -, ,$(platform_clean)))) \
+		$(eval arch := $(word 2,$(subst -, ,$(platform_clean)))) \
+		echo "  Building $(platform_clean)..."; \
+		CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) \
+			go build $(LDFLAGS) \
+			-o dist/$(platform_clean)$(or $(ext),) .; \
+	)
+	@echo ""
 	@echo "Release binaries built in dist/"
 	@ls -la dist/
 
@@ -264,18 +253,18 @@ validate-tools:
 	@command -v git >/dev/null 2>&1 || { echo "❌ Git is required but not installed"; exit 1; }
 	@echo "✅ Core tools are installed."
 
-# Validate that all linting tools are installed
+# Validate that linting tools can be run
 validate-lint-tools:
-	@echo "Validating linting tools..."
-	@test -f $(GOLANGCI_LINT) || { echo "❌ golangci-lint not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOIMPORTS) || { echo "❌ goimports not found. Run: make dev-setup"; exit 1; }
-	@test -f $(STATICCHECK) || { echo "❌ staticcheck not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOCYCLO) || { echo "❌ gocyclo not found. Run: make dev-setup"; exit 1; }
-	@test -f $(INEFFASSIGN) || { echo "❌ ineffassign not found. Run: make dev-setup"; exit 1; }
-	@test -f $(MISSPELL) || { echo "❌ misspell not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOSEC) || { echo "❌ gosec not found. Run: make dev-setup"; exit 1; }
-	@test -f $(GOVULNCHECK) || { echo "❌ govulncheck not found. Run: make dev-setup"; exit 1; }
-	@echo "✅ All linting tools are installed."
+	@echo "Validating linting tools can be executed..."
+	@$(GOLANGCI_LINT) version >/dev/null 2>&1 || { echo "❌ golangci-lint failed"; exit 1; }
+	@$(GOIMPORTS) -l . >/dev/null 2>&1 || { echo "❌ goimports failed"; exit 1; }
+	@$(STATICCHECK) --help >/dev/null 2>&1 || { echo "❌ staticcheck failed"; exit 1; }
+	@$(GOCYCLO) . >/dev/null 2>&1 || { echo "❌ gocyclo failed"; exit 1; }
+	@$(INEFFASSIGN) . >/dev/null 2>&1 || { echo "❌ ineffassign failed"; exit 1; }
+	@$(MISSPELL) --help >/dev/null 2>&1 || { echo "❌ misspell failed"; exit 1; }
+	@$(GOSEC) --help >/dev/null 2>&1 || { echo "❌ gosec failed"; exit 1; }
+	@$(GOVULNCHECK) --help >/dev/null 2>&1 || { echo "❌ govulncheck failed"; exit 1; }
+	@echo "✅ All linting tools work"
 
 # Quick development cycle
 dev: fmt lint test build
@@ -333,7 +322,7 @@ quality: validate-lint-tools fmt lint-all test-coverage-check security-scan
 	@echo "Quality check complete!"
 
 # Presentation targets
-.PHONY: presentation presentation-setup presentation-html presentation-pdf presentation-serve presentation-clean
+.PHONY: presentation presentation-html presentation-pdf presentation-serve presentation-clean
 
 # Build presentation HTML
 presentation-html:
@@ -365,9 +354,10 @@ presentation-pdf:
 	@echo "Building presentation PDF..."
 	@command -v pandoc >/dev/null 2>&1 || { echo "Pandoc is required. Install: apt install pandoc"; exit 1; }
 	@command -v xelatex >/dev/null 2>&1 || { echo "XeLaTeX is required. Install: apt install texlive-xetex"; exit 1; }
-	@command -v mmdc >/dev/null 2>&1 || { echo "Mermaid CLI is required. Run: make presentation-setup"; exit 1; }
-	@npm list -g mermaid-filter >/dev/null 2>&1 || { echo "mermaid-filter is required. Run: make presentation-setup"; exit 1; }
-	mkdir -p dist/presentation
+	@echo "Ensuring mermaid-filter is available..."
+	@command -v mermaid-filter >/dev/null 2>&1 || { echo "Installing mermaid-filter..." && npm install -g mermaid-filter; }
+	@mkdir -p dist/presentation
+	export PATH="$$(npm config get prefix)/bin:$$PATH"; \
 	pandoc docs/presentation.md \
 		-o dist/presentation/presentation.pdf \
 		--pdf-engine=xelatex \
