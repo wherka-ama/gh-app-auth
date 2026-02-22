@@ -447,5 +447,7 @@ func createWindowsCredentialWrapper(execPath, patternArg string) string {
 		return fmt.Sprintf("\"%s\" git-credential --pattern %s", execPath, patternArg)
 	}
 
-	return wrapperPath
+	// Convert to forward slashes for git config - Windows accepts both,
+	// but backslashes get stripped by shell interpretation
+	return strings.ReplaceAll(wrapperPath, "\\", "/")
 }
