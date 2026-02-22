@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
@@ -162,8 +163,18 @@ func syncGitConfig(scope string, auto bool) error {
 		if strings.ContainsAny(pattern, "*?[] ") {
 			patternArg = fmt.Sprintf("\"%s\"", pattern)
 		}
-		// Quote execPath to handle paths with spaces (common on Windows)
-		helperValue := fmt.Sprintf("!\"%s\" git-credential --pattern %s", execPath, patternArg)
+
+		// Build helper value - Windows needs different path formatting
+		var helperValue string
+		if runtime.GOOS == "windows" {
+			// On Windows, use cmd /c explicitly and convert backslashes
+			// This ensures the command is executed through Windows command interpreter
+			execPathFwd := strings.ReplaceAll(execPath, "\\", "/")
+			helperValue = fmt.Sprintf("!cmd /c \"%s\" git-credential --pattern %s", execPathFwd, patternArg)
+		} else {
+			// Unix systems - Quote execPath to handle paths with spaces
+			helperValue = fmt.Sprintf("!\"%s\" git-credential --pattern %s", execPath, patternArg)
+		}
 		setCmd := exec.Command("git", "config", scope, "--add", credKey, helperValue)
 		if err := setCmd.Run(); err != nil {
 			fmt.Printf("❌ Failed to configure: %s\n", context)

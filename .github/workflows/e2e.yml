@@ -93,9 +93,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Strip 'v' prefix from version for package matching
+          VERSION="${{ inputs.release_tag }}"
+          PKG_VERSION="${VERSION#v}"
+          # Use wildcard for RPM_RELEASE to match any release number (e.g., -1, -2)
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
-            --pattern "gh-app-auth_${{ inputs.release_tag }}_linux_amd64.rpm" \
+            --pattern "gh-app-auth_${PKG_VERSION}-*_x86_64.rpm" \
             --dir ./e2e-artifact
 
       - name: Install RPM package
@@ -142,9 +146,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Strip 'v' prefix from version for package matching
+          VERSION="${{ inputs.release_tag }}"
+          PKG_VERSION="${VERSION#v}"
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
-            --pattern "gh-app-auth_${{ inputs.release_tag }}_linux_amd64.deb" \
+            --pattern "gh-app-auth_${PKG_VERSION}_amd64.deb" \
             --dir ./e2e-artifact
 
       - name: Install DEB package
