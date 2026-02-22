@@ -151,11 +151,18 @@ func RunGit(t *testing.T, env []string, dir string, args ...string) (string, str
 }
 
 // writePrivateKeyFile writes the PEM key to a temp file with 0600 permissions.
+// On Windows, explicitly sets file permissions after write.
 func writePrivateKeyFile(t *testing.T, pem string) string {
 	t.Helper()
 	keyFile := filepath.Join(t.TempDir(), "private-key.pem")
 	if err := os.WriteFile(keyFile, []byte(pem), 0600); err != nil {
 		t.Fatalf("failed to write private key file: %v", err)
+	}
+	// On Windows, explicitly set permissions as os.WriteFile doesn't properly set them
+	if runtime.GOOS == "windows" {
+		if err := os.Chmod(keyFile, 0600); err != nil {
+			t.Fatalf("failed to set private key file permissions: %v", err)
+		}
 	}
 	return keyFile
 }

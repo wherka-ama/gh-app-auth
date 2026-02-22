@@ -105,9 +105,10 @@ jobs:
       - name: Install RPM package
         run: rpm -i ./e2e-artifact/*.rpm
 
-      - name: Verify git is available in Fedora
+      - name: Install git and which in Fedora
         run: |
           git --version || dnf install -y git
+          which which || dnf install -y which
 
       - name: Verify standalone binary path and version
         run: |
@@ -244,6 +245,12 @@ jobs:
 
       - name: Verify binary
         run: .\e2e-artifact\gh-app-auth.exe --version
+      - name: Fix private key file permissions
+        run: |
+          $keyFile = Join-Path $env:TEMP "gh_app_key.pem"
+          if (Test-Path $keyFile) {
+            icacls $keyFile /inheritance:r /grant:r "${env:USERNAME}:F"
+          }
 
       - name: Run E2E tests
         env:
