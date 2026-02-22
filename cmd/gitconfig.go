@@ -164,13 +164,11 @@ func syncGitConfig(scope string, auto bool) error {
 			patternArg = fmt.Sprintf("\"%s\"", pattern)
 		}
 
-		// Build helper value - Windows needs different path formatting
+		// Build helper value - Windows needs a wrapper script for reliable execution
 		var helperValue string
 		if runtime.GOOS == "windows" {
-			// On Windows, use cmd /c explicitly and convert backslashes
-			// This ensures the command is executed through Windows command interpreter
-			execPathFwd := strings.ReplaceAll(execPath, "\\", "/")
-			helperValue = fmt.Sprintf("!cmd /c \"%s\" git-credential --pattern %s", execPathFwd, patternArg)
+			// On Windows, create a batch file wrapper that git can execute directly
+			helperValue = createWindowsCredentialWrapper(execPath, patternArg)
 		} else {
 			// Unix systems - Quote execPath to handle paths with spaces
 			helperValue = fmt.Sprintf("!\"%s\" git-credential --pattern %s", execPath, patternArg)
@@ -421,4 +419,33 @@ func getExecutablePath() (string, error) {
 	}
 
 	return execPath, nil
+}
+
+// createWindowsCredentialWrapper creates a batch file wrapper for Windows.
+// Returns the path to the wrapper batch file which git can execute directly.
+func createWindowsCredentialWrapper(execPath, patternArg string) string {
+	// Create a unique wrapper name in user's temp directory
+	hash := 0
+	for _, c := range patternArg {
+		hash = hash*31 + int(c)
+	}
+	if hash < 0 {
+		hash = -hash
+	}
+
+	tempDir := os.TempDir()
+	wrapperName := fmt.Sprintf("gh-app-auth-cred-%d.bat", hash)
+	wrapperPath := filepath.Join(tempDir, wrapperName)
+
+	// Build batch file content
+	// Use proper escaping for Windows batch files
+	batchContent := fmt.Sprintf("@echo off\r\n\"%s\" git-credential --pattern %s %%*\r\n", execPath, patternArg)
+
+	// Write the wrapper script (overwrite if exists)
+	if err := os.WriteFile(wrapperPath, []byte(batchContent), 0755); err != nil {
+		// Fallback: return direct command if we can't create wrapper
+		return fmt.Sprintf("\"%s\" git-credential --pattern %s", execPath, patternArg)
+	}
+
+	return wrapperPath
 }
