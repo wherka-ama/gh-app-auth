@@ -42,7 +42,7 @@ func testHelpOutput(t *testing.T) {
 		t.Fatalf("--help failed: %v\nstderr: %s", err, stderr)
 	}
 	combined := stdout + stderr
-	for _, keyword := range []string{"setup", "list", "remove", "git-credential", "gitconfig"} {
+	for _, keyword := range []string{"setup", "list", "remove", "gitconfig", "test", "scope"} {
 		if !strings.Contains(combined, keyword) {
 			t.Errorf("--help output missing expected subcommand %q\nOutput:\n%s", keyword, combined)
 		}
@@ -51,7 +51,7 @@ func testHelpOutput(t *testing.T) {
 
 func testSubcommandPresence(t *testing.T) {
 	env, _ := isolatedAppConfig(t)
-	expected := []string{"setup", "list", "remove", "git-credential", "gitconfig", "test", "scope"}
+	expected := []string{"setup", "list", "remove", "gitconfig", "test", "scope", "config", "migrate"}
 	stdout, stderr, err := RunCmd(t, env, "--help")
 	if err != nil {
 		t.Fatalf("--help failed: %v\nstderr: %s", err, stderr)

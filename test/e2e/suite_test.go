@@ -73,15 +73,23 @@ func loadE2EConfig() (*E2EConfig, error) {
 		return nil, fmt.Errorf("E2E_APP_ID is required")
 	}
 
-	privateKeyB64 := os.Getenv("E2E_PRIVATE_KEY_B64")
-	if privateKeyB64 == "" {
-		return nil, fmt.Errorf("E2E_PRIVATE_KEY_B64 is required")
+	// E2E_PRIVATE_KEY accepts raw PEM content (convenient for local dev via $(cat key.pem)).
+	// E2E_PRIVATE_KEY_B64 accepts base64-encoded PEM (required for CI / GitHub Actions secrets).
+	// E2E_PRIVATE_KEY takes precedence when both are set.
+	if raw := os.Getenv("E2E_PRIVATE_KEY"); raw != "" {
+		cfg.PrivateKeyPEM = raw
+	} else {
+		privateKeyB64 := os.Getenv("E2E_PRIVATE_KEY_B64")
+		if privateKeyB64 == "" {
+			return nil, fmt.Errorf("E2E_PRIVATE_KEY or E2E_PRIVATE_KEY_B64 is required")
+		}
+		decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(privateKeyB64))
+		if err != nil {
+			return nil, fmt.Errorf("failed to base64-decode E2E_PRIVATE_KEY_B64: %w\n"+
+				"Tip: for local dev use E2E_PRIVATE_KEY=$(cat key.pem) instead", err)
+		}
+		cfg.PrivateKeyPEM = string(decoded)
 	}
-	decoded, err := base64.StdEncoding.DecodeString(strings.TrimSpace(privateKeyB64))
-	if err != nil {
-		return nil, fmt.Errorf("failed to base64-decode E2E_PRIVATE_KEY_B64: %w", err)
-	}
-	cfg.PrivateKeyPEM = string(decoded)
 
 	cfg.GitHubToken = os.Getenv("E2E_GITHUB_TOKEN")
 	if cfg.GitHubToken == "" {

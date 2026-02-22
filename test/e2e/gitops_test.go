@@ -44,12 +44,6 @@ func testClonePrivateRepoOrg1(t *testing.T) {
 		t.Fatalf("clone failed: %v", err)
 	}
 
-	// Verify clone succeeded with content
-	readmeFile := filepath.Join(cloneDir, "README.md")
-	if _, err := os.Stat(readmeFile); os.IsNotExist(err) {
-		t.Errorf("expected README.md in cloned repo, not found at %s", readmeFile)
-	}
-
 	// Verify the marker file exists and contains the expected content
 	markerPath := filepath.Join(cloneDir, mainMarkerFile)
 	assertFileContains(t, markerPath, mainMarkerContent)

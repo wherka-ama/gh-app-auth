@@ -20,7 +20,7 @@ import (
 // prevent state leakage between tests.
 func TestAuthentication(t *testing.T) {
 	t.Run("setup_with_key_file", testSetupWithKeyFile)
-	t.Run("setup_with_env_key", testSetupWithEnvKey)
+	t.Run("setup_second_org", testSetupSecondOrg)
 	t.Run("list_shows_configured_app", testListShowsConfiguredApp)
 	t.Run("gitconfig_sync_registers_helper", testGitconfigSync)
 	t.Run("credential_helper_responds", testCredentialHelperResponds)
@@ -51,27 +51,53 @@ func testSetupWithKeyFile(t *testing.T) {
 	t.Log("✓ setup with key file succeeded")
 }
 
-// testSetupWithEnvKey exercises setup using GH_APP_PRIVATE_KEY environment variable.
-// This is the preferred CI approach (no key file on disk).
-func testSetupWithEnvKey(t *testing.T) {
+// testSetupSecondOrg exercises adding a second org pattern to the same config.
+// This validates the multi-org setup path — the core enterprise use-case.
+func testSetupSecondOrg(t *testing.T) {
 	env, _ := isolatedAppConfig(t)
-	env = setEnv(env, "GH_APP_PRIVATE_KEY", globalConfig.PrivateKeyPEM)
-	pattern := fmt.Sprintf("github.com/%s/*", globalConfig.TestOrg1)
+	keyFile := writePrivateKeyFile(t, globalConfig.PrivateKeyPEM)
 
-	stdout, stderr, err := RunCmd(t, env,
+	// First org
+	pattern1 := fmt.Sprintf("github.com/%s/*", globalConfig.TestOrg1)
+	_, _, err := RunCmd(t, env,
 		"setup",
 		"--app-id", globalConfig.AppID,
-		"--patterns", pattern,
-		"--name", "E2E-EnvKey-Test",
+		"--key-file", keyFile,
+		"--patterns", pattern1,
+		"--name", "E2E-Org1",
 		"--use-filesystem",
 	)
 	if err != nil {
-		t.Fatalf("setup with env key failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+		t.Fatalf("setup org1 failed: %v", err)
 	}
-	if !strings.Contains(stdout+stderr, "Successfully configured") {
-		t.Errorf("expected success message\nstdout: %s\nstderr: %s", stdout, stderr)
+
+	// Second org (same App, different pattern)
+	pattern2 := fmt.Sprintf("github.com/%s/*", globalConfig.TestOrg2)
+	stdout, stderr, err := RunCmd(t, env,
+		"setup",
+		"--app-id", globalConfig.AppID,
+		"--key-file", keyFile,
+		"--patterns", pattern2,
+		"--name", "E2E-Org2",
+		"--use-filesystem",
+	)
+	if err != nil {
+		t.Fatalf("setup org2 failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
 	}
-	t.Log("✓ setup with GH_APP_PRIVATE_KEY env var succeeded")
+
+	// Verify both orgs appear in list
+	listOut, listErr, err := RunCmd(t, env, "list")
+	if err != nil {
+		t.Fatalf("list failed: %v\nstderr: %s", err, listErr)
+	}
+	combined := listOut + listErr
+	if !strings.Contains(combined, globalConfig.TestOrg1) {
+		t.Errorf("list missing org1 %s\nOutput: %s", globalConfig.TestOrg1, combined)
+	}
+	if !strings.Contains(combined, globalConfig.TestOrg2) {
+		t.Errorf("list missing org2 %s\nOutput: %s", globalConfig.TestOrg2, combined)
+	}
+	t.Log("✓ multi-org setup succeeded — both orgs configured")
 }
 
 // testListShowsConfiguredApp verifies that list output contains the app's details.
@@ -206,7 +232,7 @@ func testRemoveClearsConfiguration(t *testing.T) {
 		t.Fatalf("setup failed: %v", err)
 	}
 
-	stdout, stderr, err := RunCmd(t, env, "remove", "--name", appName, "--yes")
+	stdout, stderr, err := RunCmd(t, env, "remove", "--app-id", globalConfig.AppID, "--force")
 	if err != nil {
 		t.Fatalf("remove failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
 	}

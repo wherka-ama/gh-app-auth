@@ -54,18 +54,19 @@ jobs:
         run: |
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
-            --pattern "gh-app-auth_linux_amd64" \
+            --pattern "linux-amd64" \
             --dir ./e2e-artifact
-          chmod +x ./e2e-artifact/gh-app-auth_linux_amd64
+          mv ./e2e-artifact/linux-amd64 ./e2e-artifact/gh-app-auth
+          chmod +x ./e2e-artifact/gh-app-auth
 
       - name: Verify binary is standalone (no gh CLI required)
         run: |
-          ./e2e-artifact/gh-app-auth_linux_amd64 --version
-          ./e2e-artifact/gh-app-auth_linux_amd64 --help
+          ./e2e-artifact/gh-app-auth --version
+          ./e2e-artifact/gh-app-auth --help
 
       - name: Run E2E tests
         env:
-          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth_linux_amd64
+          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth
           E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
           E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
           E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
@@ -90,7 +91,7 @@ jobs:
 
       - name: Download RPM artifact from prerelease
         env:
-          GH_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
@@ -139,17 +140,18 @@ jobs:
           ARCH=$(uname -m | sed 's/x86_64/amd64/;s/arm64/arm64/')
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
-            --pattern "gh-app-auth_darwin_${ARCH}" \
+            --pattern "darwin-${ARCH}" \
             --dir ./e2e-artifact
-          chmod +x ./e2e-artifact/gh-app-auth_darwin_*
+          mv ./e2e-artifact/darwin-${ARCH} ./e2e-artifact/gh-app-auth
+          chmod +x ./e2e-artifact/gh-app-auth
 
       - name: Verify binary is standalone
         run: |
-          ./e2e-artifact/gh-app-auth_darwin_* --version
+          ./e2e-artifact/gh-app-auth --version
 
       - name: Run E2E tests
         env:
-          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth_darwin_${{ runner.arch == 'ARM64' && 'arm64' || 'amd64' }}
+          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth
           E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
           E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
           E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
@@ -179,15 +181,16 @@ jobs:
         run: |
           gh release download "${{ inputs.release_tag }}" `
             --repo "${{ github.repository }}" `
-            --pattern "gh-app-auth_windows_amd64.exe" `
+            --pattern "windows-amd64.exe" `
             --dir ./e2e-artifact
+          Move-Item -Path "./e2e-artifact/windows-amd64.exe" -Destination "./e2e-artifact/gh-app-auth.exe"
 
       - name: Verify binary
-        run: .\e2e-artifact\gh-app-auth_windows_amd64.exe --version
+        run: .\e2e-artifact\gh-app-auth.exe --version
 
       - name: Run E2E tests
         env:
-          E2E_BINARY_PATH: ${{ github.workspace }}\e2e-artifact\gh-app-auth_windows_amd64.exe
+          E2E_BINARY_PATH: ${{ github.workspace }}\e2e-artifact\gh-app-auth.exe
           E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
           E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
           E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
