@@ -95,11 +95,61 @@ jobs:
         run: |
           gh release download "${{ inputs.release_tag }}" \
             --repo "${{ github.repository }}" \
-            --pattern "*.rpm" \
+            --pattern "gh-app-auth_${{ inputs.release_tag }}_linux_amd64.rpm" \
             --dir ./e2e-artifact
 
       - name: Install RPM package
         run: rpm -i ./e2e-artifact/*.rpm
+
+      - name: Verify git is available in Fedora
+        run: |
+          git --version || dnf install -y git
+
+      - name: Verify standalone binary path and version
+        run: |
+          which gh-app-auth
+          gh-app-auth --version
+          gh-app-auth --help
+
+      - name: Run E2E tests (against installed binary)
+        env:
+          E2E_BINARY_PATH: /usr/bin/gh-app-auth
+          E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+          E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+          E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          E2E_TEST_ORG_1: ${{ inputs.test_org_1 }}
+          E2E_TEST_ORG_2: ${{ inputs.test_org_2 }}
+        run: |
+          go test -v -tags=e2e -timeout=${{ env.TEST_TIMEOUT }} ./test/e2e/...
+
+  # ─────────────────────────────────────────────
+  # Linux DEB: test inside an Ubuntu container
+  # ─────────────────────────────────────────────
+  e2e-linux-deb:
+    name: E2E / Linux (DEB / Ubuntu)
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: |
+          apt-get update
+          apt-get install -y git golang-go gh jq curl
+
+      - name: Download DEB artifact from prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "gh-app-auth_${{ inputs.release_tag }}_linux_amd64.deb" \
+            --dir ./e2e-artifact
+
+      - name: Install DEB package
+        run: |
+          dpkg -i ./e2e-artifact/*.deb || apt-get install -f -y
 
       - name: Verify standalone binary path and version
         run: |
@@ -204,7 +254,7 @@ jobs:
   # ─────────────────────────────────────────────
   promote-release:
     name: Promote prerelease to latest
-    needs: [e2e-linux, e2e-linux-rpm, e2e-macos, e2e-windows]
+    needs: [e2e-linux, e2e-linux-rpm, e2e-linux-deb, e2e-macos, e2e-windows]
     runs-on: ubuntu-latest
     if: success()
     permissions:

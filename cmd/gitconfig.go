@@ -162,7 +162,8 @@ func syncGitConfig(scope string, auto bool) error {
 		if strings.ContainsAny(pattern, "*?[] ") {
 			patternArg = fmt.Sprintf("\"%s\"", pattern)
 		}
-		helperValue := fmt.Sprintf("!%s git-credential --pattern %s", execPath, patternArg)
+		// Quote execPath to handle paths with spaces (common on Windows)
+		helperValue := fmt.Sprintf("!\"%s\" git-credential --pattern %s", execPath, patternArg)
 		setCmd := exec.Command("git", "config", scope, "--add", credKey, helperValue)
 		if err := setCmd.Run(); err != nil {
 			fmt.Printf("❌ Failed to configure: %s\n", context)
