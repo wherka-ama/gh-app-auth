@@ -9,8 +9,15 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  # ─────────────────────────────────────────────────────────
+  # Build and upload artifacts as PRERELEASE.
+  # The release is NOT marked latest until E2E tests pass.
+  # ─────────────────────────────────────────────────────────
+  release-prerelease:
+    name: Build & Prerelease
     runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,30 +29,43 @@ jobs:
           go-version: '1.21'
           cache: false  # Avoid cache conflict with gh-extension-precompile
 
-      - name: Run tests
+      - name: Run unit tests
         run: go test ./...
 
-      - name: Prepare Release
+      - name: Delete existing release if present
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Delete existing release if it exists (allows re-running)
           gh release delete ${{ github.ref_name }} --yes 2>/dev/null || true
 
-          # Create draft release with generated notes (precompile will add assets)
+      - name: Create PRERELEASE (not yet latest)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           gh release create ${{ github.ref_name }} \
             --title "🚀 ${{ github.ref_name }}" \
             --generate-notes \
-            --draft=true
+            --prerelease \
+            --draft=false
 
-      - name: Create cross-platform builds
+      - name: Build and upload cross-platform binaries
         uses: cli/gh-extension-precompile@v2
         with:
           go_version: "1.21"
 
-      - name: Publish Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Publish the draft release
-          gh release edit ${{ github.ref_name }} --draft=false
+  # ─────────────────────────────────────────────────────────
+  # E2E gate: runs against the prerelease artifacts.
+  # Promotes to latest only if all platform tests pass.
+  # ─────────────────────────────────────────────────────────
+  e2e-gate:
+    name: E2E Gate
+    needs: release-prerelease
+    uses: ./.github/workflows/e2e.yml
+    with:
+      release_tag: ${{ needs.release-prerelease.outputs.release_tag }}
+      test_org_1: "gh-app-auth-test-1"
+      test_org_2: "gh-app-auth-test-2"
+    secrets:
+      E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+      E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+      E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}

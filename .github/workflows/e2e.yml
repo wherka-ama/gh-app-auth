@@ -1,0 +1,218 @@
+name: E2E Tests
+
+# Reusable workflow — called from release.yml after prerelease artifacts are uploaded.
+# Runs the full E2E test suite against real release artifacts across all supported
+# platforms. On success the caller promotes the prerelease to latest.
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "The release tag to test (e.g. v1.2.3)"
+        required: true
+        type: string
+      test_org_1:
+        description: "First test organization name"
+        required: false
+        type: string
+        default: "gh-app-auth-test-1"
+      test_org_2:
+        description: "Second test organization name"
+        required: false
+        type: string
+        default: "gh-app-auth-test-2"
+    secrets:
+      E2E_APP_ID:
+        required: true
+      E2E_PRIVATE_KEY_B64:
+        required: true
+      E2E_GITHUB_TOKEN:
+        required: true
+
+env:
+  GO_VERSION: "1.21"
+  TEST_TIMEOUT: "10m"
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Linux: test the linux-amd64 binary directly
+  # ─────────────────────────────────────────────
+  e2e-linux:
+    name: E2E / Linux (binary)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download linux-amd64 binary from prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "gh-app-auth_linux_amd64" \
+            --dir ./e2e-artifact
+          chmod +x ./e2e-artifact/gh-app-auth_linux_amd64
+
+      - name: Verify binary is standalone (no gh CLI required)
+        run: |
+          ./e2e-artifact/gh-app-auth_linux_amd64 --version
+          ./e2e-artifact/gh-app-auth_linux_amd64 --help
+
+      - name: Run E2E tests
+        env:
+          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth_linux_amd64
+          E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+          E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+          E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          E2E_TEST_ORG_1: ${{ inputs.test_org_1 }}
+          E2E_TEST_ORG_2: ${{ inputs.test_org_2 }}
+        run: |
+          go test -v -tags=e2e -timeout=${{ env.TEST_TIMEOUT }} ./test/e2e/...
+
+  # ─────────────────────────────────────────────
+  # Linux RPM: test inside a Fedora container
+  # ─────────────────────────────────────────────
+  e2e-linux-rpm:
+    name: E2E / Linux (RPM / Fedora)
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: dnf install -y git golang gh jq
+
+      - name: Download RPM artifact from prerelease
+        env:
+          GH_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "*.rpm" \
+            --dir ./e2e-artifact
+
+      - name: Install RPM package
+        run: rpm -i ./e2e-artifact/*.rpm
+
+      - name: Verify standalone binary path and version
+        run: |
+          which gh-app-auth
+          gh-app-auth --version
+          gh-app-auth --help
+
+      - name: Run E2E tests (against installed binary)
+        env:
+          E2E_BINARY_PATH: /usr/bin/gh-app-auth
+          E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+          E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+          E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          E2E_TEST_ORG_1: ${{ inputs.test_org_1 }}
+          E2E_TEST_ORG_2: ${{ inputs.test_org_2 }}
+        run: |
+          go test -v -tags=e2e -timeout=${{ env.TEST_TIMEOUT }} ./test/e2e/...
+
+  # ─────────────────────────────────────────────
+  # macOS: test the darwin binary
+  # ─────────────────────────────────────────────
+  e2e-macos:
+    name: E2E / macOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download macOS binary from prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/arm64/arm64/')
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "gh-app-auth_darwin_${ARCH}" \
+            --dir ./e2e-artifact
+          chmod +x ./e2e-artifact/gh-app-auth_darwin_*
+
+      - name: Verify binary is standalone
+        run: |
+          ./e2e-artifact/gh-app-auth_darwin_* --version
+
+      - name: Run E2E tests
+        env:
+          E2E_BINARY_PATH: ${{ github.workspace }}/e2e-artifact/gh-app-auth_darwin_${{ runner.arch == 'ARM64' && 'arm64' || 'amd64' }}
+          E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+          E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+          E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          E2E_TEST_ORG_1: ${{ inputs.test_org_1 }}
+          E2E_TEST_ORG_2: ${{ inputs.test_org_2 }}
+        run: |
+          go test -v -tags=e2e -timeout=${{ env.TEST_TIMEOUT }} ./test/e2e/...
+
+  # ─────────────────────────────────────────────
+  # Windows: test the windows-amd64 binary
+  # ─────────────────────────────────────────────
+  e2e-windows:
+    name: E2E / Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download Windows binary from prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download "${{ inputs.release_tag }}" `
+            --repo "${{ github.repository }}" `
+            --pattern "gh-app-auth_windows_amd64.exe" `
+            --dir ./e2e-artifact
+
+      - name: Verify binary
+        run: .\e2e-artifact\gh-app-auth_windows_amd64.exe --version
+
+      - name: Run E2E tests
+        env:
+          E2E_BINARY_PATH: ${{ github.workspace }}\e2e-artifact\gh-app-auth_windows_amd64.exe
+          E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+          E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+          E2E_GITHUB_TOKEN: ${{ secrets.E2E_GITHUB_TOKEN }}
+          E2E_TEST_ORG_1: ${{ inputs.test_org_1 }}
+          E2E_TEST_ORG_2: ${{ inputs.test_org_2 }}
+        run: |
+          go test -v -tags=e2e -timeout=${{ env.TEST_TIMEOUT }} ./test/e2e/...
+
+  # ─────────────────────────────────────────────
+  # Promote: runs only if ALL platform jobs pass
+  # ─────────────────────────────────────────────
+  promote-release:
+    name: Promote prerelease to latest
+    needs: [e2e-linux, e2e-linux-rpm, e2e-macos, e2e-windows]
+    runs-on: ubuntu-latest
+    if: success()
+    permissions:
+      contents: write
+    steps:
+      - name: Mark release as latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --prerelease=false \
+            --latest
+          echo "✅ Release ${{ inputs.release_tag }} promoted to latest"

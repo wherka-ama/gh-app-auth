@@ -1,6 +1,6 @@
 # gh-app-auth Makefile
 
-.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test
+.PHONY: help build test lint clean install dev-setup security-scan release deps vet gocyclo staticcheck ineffassign misspell test-coverage-check markdownlint yamllint actionlint cli-smoke-test test-e2e test-e2e-local
 
 # Default target
 help:
@@ -12,6 +12,8 @@ help:
 	@echo "  test-race          Run tests with race detection"
 	@echo "  test-cover         Run tests with coverage report"
 	@echo "  test-coverage-check Enforce minimum coverage threshold"
+	@echo "  test-e2e           Run E2E tests (requires test infra + secrets)"
+	@echo "  test-e2e-local     Run E2E tests with locally built binary"
 	@echo "  lint               Run all linters (golangci-lint)"
 	@echo "  vet                Run go vet"
 	@echo "  staticcheck        Run staticcheck"
@@ -100,6 +102,26 @@ test-coverage-check:
 	else \
 		echo "✅ Coverage $$COVERAGE% meets threshold $(COVERAGE_THRESHOLD)%"; \
 	fi
+
+# Run E2E tests using a pre-built or user-supplied binary.
+# Requires test infrastructure (see docs/E2E_INFRASTRUCTURE.md) and secrets:
+#   export E2E_APP_ID=<app-id>
+#   export E2E_PRIVATE_KEY_B64=$(base64 -w0 < /path/to/key.pem)
+#   export E2E_GITHUB_TOKEN=<github-token-with-repo-scope>
+# Optional: export E2E_BINARY_PATH=/path/to/binary  (builds from source if unset)
+test-e2e:
+	@echo "Running E2E tests (requires test infrastructure)..."
+	go test -v -tags=e2e -timeout=15m ./test/e2e/...
+
+# Run E2E tests using a locally built binary (no prerelease needed).
+# Builds the binary from source automatically.
+test-e2e-local:
+	@echo "Building binary for E2E tests..."
+	go build -o /tmp/gh-app-auth-e2e-local .
+	@echo "Running E2E tests with local binary..."
+	E2E_BINARY_PATH=/tmp/gh-app-auth-e2e-local \
+		go test -v -tags=e2e -timeout=15m ./test/e2e/...
+	@rm -f /tmp/gh-app-auth-e2e-local
 
 # Lint code with golangci-lint (comprehensive)
 lint:
