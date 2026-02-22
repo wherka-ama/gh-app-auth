@@ -245,12 +245,6 @@ jobs:
 
       - name: Verify binary
         run: .\e2e-artifact\gh-app-auth.exe --version
-      - name: Fix private key file permissions
-        run: |
-          $keyFile = Join-Path $env:TEMP "gh_app_key.pem"
-          if (Test-Path $keyFile) {
-            icacls $keyFile /inheritance:r /grant:r "${env:USERNAME}:F"
-          }
 
       - name: Run E2E tests
         env:
