@@ -24,9 +24,9 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-          cache: false  # Avoid cache conflict with gh-extension-precompile
+          cache: true
 
-      - name: Run tests
+      - name: Run unit tests
         run: go test ./...
 
       - name: Prepare Release
@@ -36,16 +36,49 @@ jobs:
           # Delete existing release if it exists (allows re-running)
           gh release delete ${{ github.ref_name }} --yes 2>/dev/null || true
 
-          # Create draft release with generated notes (precompile will add assets)
+          # Create draft release with generated notes
           gh release create ${{ github.ref_name }} \
             --title "🚀 ${{ github.ref_name }}" \
             --generate-notes \
             --draft=true
 
-      - name: Create cross-platform builds
-        uses: cli/gh-extension-precompile@v2
-        with:
-          go_version: "1.21"
+      - name: Build release binaries and packages
+        run: |
+          # Extract version from tag (strip 'v' prefix for package version)
+          VERSION="${GITHUB_REF_NAME#v}"
+          export VERSION
+          export RPM_RELEASE=1
+
+          echo "Building version: $VERSION"
+          make release packages
+
+      - name: List all built artifacts
+        run: |
+          echo "=== Built artifacts ==="
+          ls -lh dist/
+
+          echo ""
+          echo "=== DEB Package Info ==="
+          for deb in dist/*.deb; do
+            echo "--- $deb ---"
+            dpkg-deb -I "$deb" 2>/dev/null | grep -E "(Package|Version|Architecture|Maintainer)" || echo "dpkg-deb not available"
+          done
+
+          echo ""
+          echo "=== RPM Package Info ==="
+          for rpm in dist/*.rpm; do
+            echo "--- $rpm ---"
+            rpm -qip "$rpm" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Group)" || \
+              echo "rpm command not available for detailed info"
+          done
+
+      - name: Upload artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          echo "Uploading artifacts to release $VERSION..."
+          gh release upload "$VERSION" dist/*
 
   attest:
     name: Generate SLSA Attestations
