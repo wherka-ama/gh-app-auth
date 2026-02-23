@@ -1,0 +1,63 @@
+name: Attest Release Artifacts
+
+# Reusable workflow for SLSA L3 artifact attestation
+# This workflow is called from the main release workflow to separate
+# the signing process from the build process (SLSA L3 requirement)
+
+on:
+  workflow_call:
+    inputs:
+      artifact-path:
+        description: 'Path to artifacts to attest (supports glob patterns)'
+        required: true
+        type: string
+      subject-name:
+        description: 'Subject name for the attestation'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  attest:
+    name: Generate Build Attestations
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gh-extension-precompile-*
+          path: dist
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: List artifacts for attestation
+        run: |
+          echo "Artifacts to attest:"
+          ls -la ${{ inputs.artifact-path }} || echo "No artifacts found at specified path"
+
+      - name: Generate build attestations
+        id: attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ inputs.artifact-path }}
+          subject-name: ${{ inputs.subject-name || github.event.repository.name }}
+          show-summary: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output attestation info
+        run: |
+          echo "Attestation ID: ${{ steps.attest.outputs.attestation-id }}"
+          echo "Attestation URL: ${{ steps.attest.outputs.attestation-url }}"
+          echo "Bundle Path: ${{ steps.attest.outputs.bundle-path }}"
