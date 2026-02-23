@@ -1,5 +1,8 @@
 # GitHub App Authentication Extension
 
+[![SLSA Build Level 3](https://img.shields.io/badge/SLSA-Build%20L3-brightgreen)](docs/SLSA_COMPLIANCE.md)
+[![Release Please](https://img.shields.io/badge/Release-Please-blue)](.github/workflows/release-please.yml)
+
 A GitHub CLI extension that enables GitHub App authentication for Git operations and API access.
 
 ## Features
@@ -597,6 +600,29 @@ git config --global credential."https://github.example.com/corp".helper \
 - No periodic password resets or token rotation
 - Single App can be installed across multiple organizations
 - Extension handles 1-hour token expiry transparently
+
+## Supply Chain Security
+
+### SLSA Level 3 Compliance
+
+This project achieves [SLSA Build Level 3](https://slsa.dev/spec/v1.0/levels) compliance for all releases:
+
+- ✅ **Signed provenance**: Every release includes signed build attestations
+- ✅ **Immutable releases**: Release assets cannot be modified after publication
+- ✅ **Ephemeral builds**: Each build runs on isolated, ephemeral infrastructure
+- ✅ **Hardened platform**: Reusable workflow ensures separation of signing from build
+
+### Verifying Releases
+
+Verify the authenticity of any release artifact:
+
+```bash
+# Download and verify a release artifact
+gh release download v0.0.15 --pattern 'gh-app-auth_linux_amd64'
+gh attestation verify gh-app-auth_linux_amd64 --owner AmadeusITGroup
+```
+
+See [SLSA_COMPLIANCE.md](docs/SLSA_COMPLIANCE.md) for detailed compliance information and verification instructions.
 
 ## Documentation
 
