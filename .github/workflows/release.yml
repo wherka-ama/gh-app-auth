@@ -12,7 +12,8 @@ permissions:
   artifact-metadata: write
 
 jobs:
-  release:
+  build:
+    name: Build Release Artifacts
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,17 +47,33 @@ jobs:
         with:
           go_version: "1.21"
 
-      - name: Generate build attestations
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: |
-            dist/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  attest:
+    name: Generate SLSA Attestations
+    needs: build
+    uses: ./.github/workflows/attest-release.yml
+    with:
+      artifact-path: 'dist/*'
+      subject-name: 'gh-app-auth'
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
+  publish:
+    name: Publish Release
+    needs: [build, attest]
+    runs-on: ubuntu-latest
+    steps:
       - name: Publish Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Publish the draft release
           gh release edit ${{ github.ref_name }} --draft=false
+
+      - name: Verify attestations
+        run: |
+          echo "Release ${{ github.ref_name }} published with SLSA attestations"
+          echo "Attestations can be verified with: gh attestation verify <artifact> --owner ${{ github.repository_owner }}"
