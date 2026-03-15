@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
+	"github.com/AmadeusITGroup/gh-app-auth/pkg/httpclient"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/jwt"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/secrets"
 	"github.com/spf13/cobra"
@@ -519,7 +520,7 @@ func findInstallationForOrg(jwtToken, host, org string) (int64, error) {
 	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("failed to list installations: %w", err)

@@ -1,0 +1,298 @@
+name: Controlled Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., v1.4.0). Leave empty for auto-compute."
+        required: false
+        type: string
+      prerelease:
+        description: "Is this a prerelease?"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Dry run (compute version but don't create release)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.21"
+
+jobs:
+  # ─────────────────────────────────────────────────────────
+  # Compute version based on conventional commits if not provided
+  # ─────────────────────────────────────────────────────────
+  compute-version:
+    name: Compute Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      bump_type: ${{ steps.version.outputs.bump_type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: $LATEST_TAG"
+
+      - name: Compute semver bump from commits
+        id: compute_bump
+        run: |
+          LATEST_TAG="${{ steps.latest_tag.outputs.latest_tag }}"
+
+          if [ "$LATEST_TAG" = "v0.0.0" ]; then
+            echo "No existing tags, defaulting to patch bump"
+            echo "bump_type=patch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Get commits since latest tag
+          COMMITS=$(git log "$LATEST_TAG"..HEAD --pretty=format:"%s" 2>/dev/null || echo "")
+
+          if [ -z "$COMMITS" ]; then
+            echo "No commits since $LATEST_TAG, defaulting to patch bump"
+            echo "bump_type=patch" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Determine bump type based on conventional commits
+          BUMP_TYPE="patch"
+
+          # Check for breaking changes (major bump)
+          if echo "$COMMITS" | grep -qE "^(\w+\!)\:|BREAKING CHANGE"; then
+            BUMP_TYPE="major"
+            echo "Found breaking change indicator -> major bump"
+          # Check for features (minor bump)
+          elif echo "$COMMITS" | grep -qE "^feat(\([^)]*\))?:"; then
+            BUMP_TYPE="minor"
+            echo "Found feat commit -> minor bump"
+          else
+            echo "No major/minor indicators found -> patch bump"
+          fi
+
+          echo "bump_type=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Commits analyzed for bump determination"
+
+      - name: Calculate new version
+        id: version
+        run: |
+          # Use provided version or compute from bump
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "Using provided version: $VERSION"
+            echo "bump_type=manual" >> "$GITHUB_OUTPUT"
+          else
+            LATEST_TAG="${{ steps.latest_tag.outputs.latest_tag }}"
+            BUMP_TYPE="${{ steps.compute_bump.outputs.bump_type }}"
+
+            # Parse current version (strip 'v' prefix)
+            CURRENT_VERSION="${LATEST_TAG#v}"
+
+            # Split into components
+            MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+            MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+            PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
+
+            # Default if parsing fails
+            MAJOR=${MAJOR:-0}
+            MINOR=${MINOR:-0}
+            PATCH=${PATCH:-0}
+
+            # Apply bump
+            case "$BUMP_TYPE" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+
+            VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+            echo "Computed version: $VERSION (bump: $BUMP_TYPE from $LATEST_TAG)"
+            echo "bump_type=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Display version info
+        run: |
+          echo "=========================================="
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Bump Type: ${{ steps.version.outputs.bump_type }}"
+          echo "Prerelease: ${{ inputs.prerelease }}"
+          echo "Dry Run: ${{ inputs.dry_run }}"
+          echo "=========================================="
+
+  # ─────────────────────────────────────────────────────────
+  # Create tag (intentional act)
+  # ─────────────────────────────────────────────────────────
+  create-tag:
+    name: Create Tag
+    needs: compute-version
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.dry_run }}
+    outputs:
+      tag_name: ${{ needs.compute-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+
+          # Check if tag already exists
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Error: Tag $VERSION already exists"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+          echo "✓ Created and pushed tag: $VERSION"
+
+  # ─────────────────────────────────────────────────────────
+  # Build artifacts
+  # ─────────────────────────────────────────────────────────
+  build:
+    name: Build & Create Draft Release
+    needs: [compute-version, create-tag]
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.dry_run }}
+    outputs:
+      release_tag: ${{ needs.compute-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run unit tests
+        run: go test ./...
+
+      - name: Build release binaries and packages
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+          VERSION_NO_V="${VERSION#v}"
+          export VERSION="$VERSION_NO_V"
+          export RPM_RELEASE=1
+
+          echo "Building version: $VERSION"
+          make release packages
+
+      - name: List all built artifacts
+        run: |
+          echo "=== Built artifacts ==="
+          ls -lh dist/
+
+          echo ""
+          echo "=== DEB Package Info ==="
+          for deb in dist/*.deb; do
+            echo "--- $deb ---"
+            dpkg-deb -I "$deb" 2>/dev/null | grep -E "(Package|Version|Architecture|Maintainer)" || echo "dpkg-deb not available"
+          done
+
+          echo ""
+          echo "=== RPM Package Info ==="
+          for rpm in dist/*.rpm; do
+            echo "--- $rpm ---"
+            rpm -qip "$rpm" 2>/dev/null | grep -E "(Name|Version|Release|Architecture|Group)" || \
+              echo "rpm command not available for detailed info"
+          done
+
+      - name: Create draft prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+          IS_PRERELEASE="${{ inputs.prerelease }}"
+
+          echo "Creating draft release $VERSION (prerelease=$IS_PRERELEASE)..."
+
+          # Build flags
+          PRERELEASE_FLAG=""
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "$VERSION" \
+            --draft \
+            $PRERELEASE_FLAG \
+            --generate-notes \
+            --title "🚀 $VERSION"
+
+          echo "✓ Created draft release: $VERSION"
+
+      - name: Upload artifacts to draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.compute-version.outputs.version }}"
+
+          echo "Uploading artifacts to draft release $VERSION..."
+          gh release upload "$VERSION" dist/*
+          echo "✓ Uploaded artifacts"
+
+  # ─────────────────────────────────────────────────────────
+  # E2E gate: runs against the draft artifacts.
+  # E2E workflow handles promotion to non-draft after tests pass.
+  # ─────────────────────────────────────────────────────────
+  e2e-gate:
+    name: E2E Gate
+    needs: build
+    uses: ./.github/workflows/e2e.yml
+    with:
+      release_tag: ${{ needs.build.outputs.release_tag }}
+      test_org_1: "gh-app-auth-test-1"
+      test_org_2: "gh-app-auth-test-2"
+    secrets:
+      E2E_APP_ID: ${{ secrets.E2E_APP_ID }}
+      E2E_PRIVATE_KEY_B64: ${{ secrets.E2E_PRIVATE_KEY_B64 }}
+
+  # ─────────────────────────────────────────────────────────
+  # Final promotion: remove draft status after E2E passes
+  # (This runs after E2E workflow's internal promotion)
+  # ─────────────────────────────────────────────────────────
+  publish-release:
+    name: Publish Release
+    needs: [build, e2e-gate]
+    runs-on: ubuntu-latest
+    if: success() && !inputs.prerelease && !inputs.dry_run
+    steps:
+      - name: Remove draft status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ needs.build.outputs.release_tag }}"
+
+          echo "Removing draft status from $VERSION..."
+          gh release edit "$VERSION" \
+            --draft=false \
+            --latest
+
+          echo "✅ Release $VERSION published successfully"

@@ -1,0 +1,144 @@
+[2026-03-14T22:06:04.507+01:00] SESSION_START [session_1773522364_1610725_op1] pid=1610725 version=gh-app-auth args=[/tmp/go-build232162236/b304/logger.test -test.testlogfile=/tmp/go-build232162236/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build232162236/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build232162236/b304/_cover_.out]
+[2026-03-14T22:06:04.507+01:00] DEBUG [session_1773522364_1610725_op2] message=test debug test=value
+[2026-03-14T22:06:04.507+01:00] INFO [session_1773522364_1610725_op3] message=test info test=value
+[2026-03-14T22:06:04.507+01:00] ERROR [session_1773522364_1610725_op4] message=test error error=test test=value
+[2026-03-14T22:06:04.507+01:00] SESSION_END [session_1773522364_1610725_op5]
+[2026-03-14T22:06:04.508+01:00] SESSION_START [session_1773522364_1610725_op1] pid=1610725 version=gh-app-auth args=[/tmp/go-build232162236/b304/logger.test -test.testlogfile=/tmp/go-build232162236/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build232162236/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build232162236/b304/_cover_.out]
+[2026-03-14T22:06:04.508+01:00] FLOW_START [session_1773522364_1610725_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:06:04.508+01:00] FLOW_STEP [session_1773522364_1610725_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:06:04.508+01:00] FLOW_STEP [session_1773522364_1610725_op4] count=123 step=step2 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:06:04.508+01:00] FLOW_SUCCESS [session_1773522364_1610725_op5] operation=test_operation flow=SUCCESS count=123 test_key=<redacted:secret:10>
+[2026-03-14T22:06:04.508+01:00] FLOW_ERROR [session_1773522364_1610725_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:06:04.508+01:00] SESSION_END [session_1773522364_1610725_op7]
+[2026-03-14T22:18:34.814+01:00] SESSION_START [session_1773523114_1632222_op1] pid=1632222 version=gh-app-auth args=[/tmp/go-build2306229311/b304/logger.test -test.testlogfile=/tmp/go-build2306229311/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2306229311/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2306229311/b304/_cover_.out]
+[2026-03-14T22:18:34.815+01:00] DEBUG [session_1773523114_1632222_op2] message=test debug test=value
+[2026-03-14T22:18:34.815+01:00] INFO [session_1773523114_1632222_op3] message=test info test=value
+[2026-03-14T22:18:34.815+01:00] ERROR [session_1773523114_1632222_op4] test=value message=test error error=test
+[2026-03-14T22:18:34.815+01:00] SESSION_END [session_1773523114_1632222_op5]
+[2026-03-14T22:18:34.815+01:00] SESSION_START [session_1773523114_1632222_op1] version=gh-app-auth args=[/tmp/go-build2306229311/b304/logger.test -test.testlogfile=/tmp/go-build2306229311/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2306229311/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2306229311/b304/_cover_.out] pid=1632222
+[2026-03-14T22:18:34.815+01:00] FLOW_START [session_1773523114_1632222_op2] flow=START test_key=<redacted:secret:10> count=123 operation=test_operation
+[2026-03-14T22:18:34.816+01:00] FLOW_STEP [session_1773523114_1632222_op3] count=123 step=step1 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:18:34.816+01:00] FLOW_STEP [session_1773523114_1632222_op4] step=step2 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:18:34.816+01:00] FLOW_SUCCESS [session_1773523114_1632222_op5] count=123 operation=test_operation flow=SUCCESS test_key=<redacted:secret:10>
+[2026-03-14T22:18:34.816+01:00] FLOW_ERROR [session_1773523114_1632222_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:18:34.816+01:00] SESSION_END [session_1773523114_1632222_op7]
+[2026-03-14T22:20:50.608+01:00] SESSION_START [session_1773523250_1654329_op1] pid=1654329 version=gh-app-auth args=[/tmp/go-build3412586041/b304/logger.test -test.testlogfile=/tmp/go-build3412586041/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build3412586041/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build3412586041/b304/_cover_.out]
+[2026-03-14T22:20:50.608+01:00] DEBUG [session_1773523250_1654329_op2] message=test debug test=value
+[2026-03-14T22:20:50.608+01:00] INFO [session_1773523250_1654329_op3] message=test info test=value
+[2026-03-14T22:20:50.608+01:00] ERROR [session_1773523250_1654329_op4] message=test error error=test test=value
+[2026-03-14T22:20:50.609+01:00] SESSION_END [session_1773523250_1654329_op5]
+[2026-03-14T22:20:50.609+01:00] SESSION_START [session_1773523250_1654329_op1] pid=1654329 version=gh-app-auth args=[/tmp/go-build3412586041/b304/logger.test -test.testlogfile=/tmp/go-build3412586041/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build3412586041/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build3412586041/b304/_cover_.out]
+[2026-03-14T22:20:50.609+01:00] FLOW_START [session_1773523250_1654329_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:20:50.609+01:00] FLOW_STEP [session_1773523250_1654329_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:20:50.609+01:00] FLOW_STEP [session_1773523250_1654329_op4] step=step2 flow=STEP count=123 test_key=<redacted:secret:10>
+[2026-03-14T22:20:50.609+01:00] FLOW_SUCCESS [session_1773523250_1654329_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-14T22:20:50.609+01:00] FLOW_ERROR [session_1773523250_1654329_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:20:50.609+01:00] SESSION_END [session_1773523250_1654329_op7]
+[2026-03-14T22:40:45.422+01:00] SESSION_START [session_1773524445_1674161_op1] version=gh-app-auth args=[/tmp/go-build256770729/b304/logger.test -test.testlogfile=/tmp/go-build256770729/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build256770729/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build256770729/b304/_cover_.out] pid=1674161
+[2026-03-14T22:40:45.422+01:00] DEBUG [session_1773524445_1674161_op2] message=test debug test=value
+[2026-03-14T22:40:45.422+01:00] INFO [session_1773524445_1674161_op3] message=test info test=value
+[2026-03-14T22:40:45.423+01:00] ERROR [session_1773524445_1674161_op4] message=test error error=test test=value
+[2026-03-14T22:40:45.423+01:00] SESSION_END [session_1773524445_1674161_op5]
+[2026-03-14T22:40:45.423+01:00] SESSION_START [session_1773524445_1674161_op1] pid=1674161 version=gh-app-auth args=[/tmp/go-build256770729/b304/logger.test -test.testlogfile=/tmp/go-build256770729/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build256770729/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build256770729/b304/_cover_.out]
+[2026-03-14T22:40:45.423+01:00] FLOW_START [session_1773524445_1674161_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:40:45.423+01:00] FLOW_STEP [session_1773524445_1674161_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:40:45.423+01:00] FLOW_STEP [session_1773524445_1674161_op4] count=123 step=step2 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:40:45.423+01:00] FLOW_SUCCESS [session_1773524445_1674161_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-14T22:40:45.424+01:00] FLOW_ERROR [session_1773524445_1674161_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:40:45.424+01:00] SESSION_END [session_1773524445_1674161_op7]
+[2026-03-14T22:46:59.310+01:00] SESSION_START [session_1773524819_21781_op1] version=gh-app-auth args=[/tmp/go-build2360798807/b304/logger.test -test.testlogfile=/tmp/go-build2360798807/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2360798807/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2360798807/b304/_cover_.out] pid=21781
+[2026-03-14T22:46:59.314+01:00] DEBUG [session_1773524819_21781_op2] message=test debug test=value
+[2026-03-14T22:46:59.314+01:00] INFO [session_1773524819_21781_op3] message=test info test=value
+[2026-03-14T22:46:59.314+01:00] ERROR [session_1773524819_21781_op4] message=test error error=test test=value
+[2026-03-14T22:46:59.314+01:00] SESSION_END [session_1773524819_21781_op5]
+[2026-03-14T22:46:59.315+01:00] SESSION_START [session_1773524819_21781_op1] args=[/tmp/go-build2360798807/b304/logger.test -test.testlogfile=/tmp/go-build2360798807/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2360798807/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2360798807/b304/_cover_.out] pid=21781 version=gh-app-auth
+[2026-03-14T22:46:59.315+01:00] FLOW_START [session_1773524819_21781_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:46:59.315+01:00] FLOW_STEP [session_1773524819_21781_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:46:59.315+01:00] FLOW_STEP [session_1773524819_21781_op4] step=step2 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:46:59.315+01:00] FLOW_SUCCESS [session_1773524819_21781_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-14T22:46:59.315+01:00] FLOW_ERROR [session_1773524819_21781_op6] test_key=<redacted:secret:10> count=123 operation=failed_operation flow=ERROR error=test error
+[2026-03-14T22:46:59.316+01:00] SESSION_END [session_1773524819_21781_op7]
+[2026-03-14T22:48:28.657+01:00] SESSION_START [session_1773524908_24096_op1] pid=24096 version=gh-app-auth args=[/tmp/go-build554073649/b304/logger.test -test.testlogfile=/tmp/go-build554073649/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build554073649/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build554073649/b304/_cover_.out]
+[2026-03-14T22:48:28.658+01:00] DEBUG [session_1773524908_24096_op2] message=test debug test=value
+[2026-03-14T22:48:28.658+01:00] INFO [session_1773524908_24096_op3] message=test info test=value
+[2026-03-14T22:48:28.658+01:00] ERROR [session_1773524908_24096_op4] test=value message=test error error=test
+[2026-03-14T22:48:28.658+01:00] SESSION_END [session_1773524908_24096_op5]
+[2026-03-14T22:48:28.658+01:00] SESSION_START [session_1773524908_24096_op1] version=gh-app-auth args=[/tmp/go-build554073649/b304/logger.test -test.testlogfile=/tmp/go-build554073649/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build554073649/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build554073649/b304/_cover_.out] pid=24096
+[2026-03-14T22:48:28.658+01:00] FLOW_START [session_1773524908_24096_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:48:28.658+01:00] FLOW_STEP [session_1773524908_24096_op3] count=123 step=step1 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:48:28.658+01:00] FLOW_STEP [session_1773524908_24096_op4] count=123 step=step2 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:48:28.659+01:00] FLOW_SUCCESS [session_1773524908_24096_op5] count=123 operation=test_operation flow=SUCCESS test_key=<redacted:secret:10>
+[2026-03-14T22:48:28.659+01:00] FLOW_ERROR [session_1773524908_24096_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:48:28.659+01:00] SESSION_END [session_1773524908_24096_op7]
+[2026-03-14T22:50:25.445+01:00] SESSION_START [session_1773525025_42438_op1] args=[/tmp/go-build2045122145/b304/logger.test -test.testlogfile=/tmp/go-build2045122145/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2045122145/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2045122145/b304/_cover_.out] pid=42438 version=gh-app-auth
+[2026-03-14T22:50:25.445+01:00] DEBUG [session_1773525025_42438_op2] message=test debug test=value
+[2026-03-14T22:50:25.445+01:00] INFO [session_1773525025_42438_op3] message=test info test=value
+[2026-03-14T22:50:25.445+01:00] ERROR [session_1773525025_42438_op4] message=test error error=test test=value
+[2026-03-14T22:50:25.445+01:00] SESSION_END [session_1773525025_42438_op5]
+[2026-03-14T22:50:25.445+01:00] SESSION_START [session_1773525025_42438_op1] version=gh-app-auth args=[/tmp/go-build2045122145/b304/logger.test -test.testlogfile=/tmp/go-build2045122145/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2045122145/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2045122145/b304/_cover_.out] pid=42438
+[2026-03-14T22:50:25.446+01:00] FLOW_START [session_1773525025_42438_op2] flow=START test_key=<redacted:secret:10> count=123 operation=test_operation
+[2026-03-14T22:50:25.446+01:00] FLOW_STEP [session_1773525025_42438_op3] count=123 step=step1 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:50:25.446+01:00] FLOW_STEP [session_1773525025_42438_op4] count=123 step=step2 flow=STEP test_key=<redacted:secret:10>
+[2026-03-14T22:50:25.446+01:00] FLOW_SUCCESS [session_1773525025_42438_op5] flow=SUCCESS count=123 test_key=<redacted:secret:10> operation=test_operation
+[2026-03-14T22:50:25.446+01:00] FLOW_ERROR [session_1773525025_42438_op6] test_key=<redacted:secret:10> count=123 operation=failed_operation flow=ERROR error=test error
+[2026-03-14T22:50:25.446+01:00] SESSION_END [session_1773525025_42438_op7]
+[2026-03-14T22:50:58.418+01:00] SESSION_START [session_1773525058_45517_op1] pid=45517 version=gh-app-auth args=[/tmp/go-build2326312585/b304/logger.test -test.testlogfile=/tmp/go-build2326312585/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2326312585/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2326312585/b304/_cover_.out]
+[2026-03-14T22:50:58.418+01:00] DEBUG [session_1773525058_45517_op2] message=test debug test=value
+[2026-03-14T22:50:58.418+01:00] INFO [session_1773525058_45517_op3] message=test info test=value
+[2026-03-14T22:50:58.418+01:00] ERROR [session_1773525058_45517_op4] message=test error error=test test=value
+[2026-03-14T22:50:58.418+01:00] SESSION_END [session_1773525058_45517_op5]
+[2026-03-14T22:50:58.419+01:00] SESSION_START [session_1773525058_45517_op1] pid=45517 version=gh-app-auth args=[/tmp/go-build2326312585/b304/logger.test -test.testlogfile=/tmp/go-build2326312585/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2326312585/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2326312585/b304/_cover_.out]
+[2026-03-14T22:50:58.419+01:00] FLOW_START [session_1773525058_45517_op2] test_key=<redacted:secret:10> count=123 operation=test_operation flow=START
+[2026-03-14T22:50:58.419+01:00] FLOW_STEP [session_1773525058_45517_op3] step=step1 flow=STEP count=123 test_key=<redacted:secret:10>
+[2026-03-14T22:50:58.419+01:00] FLOW_STEP [session_1773525058_45517_op4] step=step2 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:50:58.419+01:00] FLOW_SUCCESS [session_1773525058_45517_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-14T22:50:58.419+01:00] FLOW_ERROR [session_1773525058_45517_op6] flow=ERROR error=test error test_key=<redacted:secret:10> count=123 operation=failed_operation
+[2026-03-14T22:50:58.419+01:00] SESSION_END [session_1773525058_45517_op7]
+[2026-03-14T22:54:22.951+01:00] SESSION_START [session_1773525262_47519_op1] pid=47519 version=gh-app-auth args=[/tmp/go-build2429473492/b304/logger.test -test.testlogfile=/tmp/go-build2429473492/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2429473492/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2429473492/b304/_cover_.out]
+[2026-03-14T22:54:22.952+01:00] DEBUG [session_1773525262_47519_op2] message=test debug test=value
+[2026-03-14T22:54:22.952+01:00] INFO [session_1773525262_47519_op3] message=test info test=value
+[2026-03-14T22:54:22.952+01:00] ERROR [session_1773525262_47519_op4] error=test test=value message=test error
+[2026-03-14T22:54:22.952+01:00] SESSION_END [session_1773525262_47519_op5]
+[2026-03-14T22:54:22.953+01:00] SESSION_START [session_1773525262_47519_op1] pid=47519 version=gh-app-auth args=[/tmp/go-build2429473492/b304/logger.test -test.testlogfile=/tmp/go-build2429473492/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2429473492/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2429473492/b304/_cover_.out]
+[2026-03-14T22:54:22.953+01:00] FLOW_START [session_1773525262_47519_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:22.953+01:00] FLOW_STEP [session_1773525262_47519_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:22.953+01:00] FLOW_STEP [session_1773525262_47519_op4] step=step2 flow=STEP count=123 test_key=<redacted:secret:10>
+[2026-03-14T22:54:22.953+01:00] FLOW_SUCCESS [session_1773525262_47519_op5] count=123 operation=test_operation flow=SUCCESS test_key=<redacted:secret:10>
+[2026-03-14T22:54:22.953+01:00] FLOW_ERROR [session_1773525262_47519_op6] error=test error test_key=<redacted:secret:10> count=123 operation=failed_operation flow=ERROR
+[2026-03-14T22:54:22.953+01:00] SESSION_END [session_1773525262_47519_op7]
+[2026-03-14T22:54:47.458+01:00] SESSION_START [session_1773525287_51680_op1] version=gh-app-auth args=[/tmp/go-build2820128644/b304/logger.test -test.testlogfile=/tmp/go-build2820128644/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2820128644/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2820128644/b304/_cover_.out] pid=51680
+[2026-03-14T22:54:47.458+01:00] DEBUG [session_1773525287_51680_op2] message=test debug test=value
+[2026-03-14T22:54:47.458+01:00] INFO [session_1773525287_51680_op3] message=test info test=value
+[2026-03-14T22:54:47.458+01:00] ERROR [session_1773525287_51680_op4] message=test error error=test test=value
+[2026-03-14T22:54:47.458+01:00] SESSION_END [session_1773525287_51680_op5]
+[2026-03-14T22:54:47.459+01:00] SESSION_START [session_1773525287_51680_op1] pid=51680 version=gh-app-auth args=[/tmp/go-build2820128644/b304/logger.test -test.testlogfile=/tmp/go-build2820128644/b304/testlog.txt -test.paniconexit0 -test.gocoverdir=/tmp/go-build2820128644/b304/gocoverdir -test.timeout=10m0s -test.coverprofile=/tmp/go-build2820128644/b304/_cover_.out]
+[2026-03-14T22:54:47.459+01:00] FLOW_START [session_1773525287_51680_op2] operation=test_operation flow=START count=123 test_key=<redacted:secret:10>
+[2026-03-14T22:54:47.459+01:00] FLOW_STEP [session_1773525287_51680_op3] flow=STEP test_key=<redacted:secret:10> count=123 step=step1
+[2026-03-14T22:54:47.459+01:00] FLOW_STEP [session_1773525287_51680_op4] step=step2 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:47.459+01:00] FLOW_SUCCESS [session_1773525287_51680_op5] flow=SUCCESS test_key=<redacted:secret:10> count=123 operation=test_operation
+[2026-03-14T22:54:47.459+01:00] FLOW_ERROR [session_1773525287_51680_op6] test_key=<redacted:secret:10> count=123 operation=failed_operation flow=ERROR error=test error
+[2026-03-14T22:54:47.459+01:00] SESSION_END [session_1773525287_51680_op7]
+[2026-03-14T22:54:55.634+01:00] SESSION_START [session_1773525295_54975_op1] pid=54975 version=gh-app-auth args=[/tmp/go-build1156310389/b286/logger.test -test.testlogfile=/tmp/go-build1156310389/b286/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2026-03-14T22:54:55.635+01:00] DEBUG [session_1773525295_54975_op2] message=test debug test=value
+[2026-03-14T22:54:55.635+01:00] INFO [session_1773525295_54975_op3] message=test info test=value
+[2026-03-14T22:54:55.635+01:00] ERROR [session_1773525295_54975_op4] error=test test=value message=test error
+[2026-03-14T22:54:55.635+01:00] SESSION_END [session_1773525295_54975_op5]
+[2026-03-14T22:54:55.635+01:00] SESSION_START [session_1773525295_54975_op1] args=[/tmp/go-build1156310389/b286/logger.test -test.testlogfile=/tmp/go-build1156310389/b286/testlog.txt -test.paniconexit0 -test.timeout=10m0s] pid=54975 version=gh-app-auth
+[2026-03-14T22:54:55.635+01:00] FLOW_START [session_1773525295_54975_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:55.635+01:00] FLOW_STEP [session_1773525295_54975_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:55.635+01:00] FLOW_STEP [session_1773525295_54975_op4] test_key=<redacted:secret:10> count=123 step=step2 flow=STEP
+[2026-03-14T22:54:55.635+01:00] FLOW_SUCCESS [session_1773525295_54975_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:55.635+01:00] FLOW_ERROR [session_1773525295_54975_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-14T22:54:55.635+01:00] SESSION_END [session_1773525295_54975_op7]
+[2026-03-15T13:38:21.707+01:00] SESSION_START [session_1773578301_80733_op1] pid=80733 version=gh-app-auth args=[/tmp/go-build701032898/b290/logger.test -test.testlogfile=/tmp/go-build701032898/b290/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2026-03-15T13:38:21.707+01:00] DEBUG [session_1773578301_80733_op2] message=test debug test=value
+[2026-03-15T13:38:21.707+01:00] INFO [session_1773578301_80733_op3] message=test info test=value
+[2026-03-15T13:38:21.707+01:00] ERROR [session_1773578301_80733_op4] message=test error error=test test=value
+[2026-03-15T13:38:21.707+01:00] SESSION_END [session_1773578301_80733_op5]
+[2026-03-15T13:38:21.707+01:00] SESSION_START [session_1773578301_80733_op1] pid=80733 version=gh-app-auth args=[/tmp/go-build701032898/b290/logger.test -test.testlogfile=/tmp/go-build701032898/b290/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2026-03-15T13:38:21.707+01:00] FLOW_START [session_1773578301_80733_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-15T13:38:21.707+01:00] FLOW_STEP [session_1773578301_80733_op3] flow=STEP test_key=<redacted:secret:10> count=123 step=step1
+[2026-03-15T13:38:21.707+01:00] FLOW_STEP [session_1773578301_80733_op4] flow=STEP test_key=<redacted:secret:10> count=123 step=step2
+[2026-03-15T13:38:21.707+01:00] FLOW_SUCCESS [session_1773578301_80733_op5] flow=SUCCESS test_key=<redacted:secret:10> count=123 operation=test_operation
+[2026-03-15T13:38:21.707+01:00] FLOW_ERROR [session_1773578301_80733_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-15T13:38:21.707+01:00] SESSION_END [session_1773578301_80733_op7]

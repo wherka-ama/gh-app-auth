@@ -14,6 +14,7 @@ import (
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/cache"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
+	"github.com/AmadeusITGroup/gh-app-auth/pkg/httpclient"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/jwt"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/secrets"
 	"github.com/cli/go-gh/v2/pkg/api"
@@ -133,12 +134,14 @@ func (a *Authenticator) GetInstallationToken(jwtToken string, installationID int
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to get installation token: %w", err)
 	}
 	defer func() {
+		// Drain and close response body for connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body)
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
 		}
