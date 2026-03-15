@@ -319,7 +319,7 @@ func setupPAT(
 	if err != nil {
 		return fmt.Errorf("failed to get home directory: %w", err)
 	}
-	configDir := filepath.Join(homeDir, ".config", "gh", "extensions", "gh-app-auth")
+	configDir := filepath.Join(homeDir, configDirPath)
 	secretMgr := secrets.NewManager(configDir)
 
 	// Store PAT
@@ -398,7 +398,7 @@ func validateSetupInputs(appID int64, patterns []string, useKeyring *bool, useFi
 		return fmt.Errorf("at least one pattern is required")
 	}
 
-	var envKey = os.Getenv("GH_APP_PRIVATE_KEY")
+	envKey := os.Getenv("GH_APP_PRIVATE_KEY")
 	if *useFilesystem && envKey != "" && keyFile != "" {
 		return ErrConflictingKeyOptions
 	}
@@ -416,7 +416,7 @@ func getPrivateKey(keyFile string) (string, string, error) {
 	var privateKeyContent string
 	var expandedKeyFile string
 
-	var envKey = os.Getenv("GH_APP_PRIVATE_KEY")
+	envKey := os.Getenv("GH_APP_PRIVATE_KEY")
 	if envKey != "" {
 		privateKeyContent = envKey
 	} else if keyFile != "" {
@@ -526,6 +526,8 @@ func findInstallationForOrg(jwtToken, host, org string) (int64, error) {
 		return 0, fmt.Errorf("failed to list installations: %w", err)
 	}
 	defer func() {
+		// Drain and close response body for connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 	}()
 

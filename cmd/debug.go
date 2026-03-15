@@ -14,10 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	gitHubAPIHost = "github.com"
-)
-
 func NewDebugCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "debug",

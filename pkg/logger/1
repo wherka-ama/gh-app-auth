@@ -178,3 +178,15 @@
 [2026-03-15T13:41:19.720+01:00] FLOW_SUCCESS [session_1773578479_82859_op5] count=123 operation=test_operation flow=SUCCESS test_key=<redacted:secret:10>
 [2026-03-15T13:41:19.720+01:00] FLOW_ERROR [session_1773578479_82859_op6] error=test error test_key=<redacted:secret:10> count=123 operation=failed_operation flow=ERROR
 [2026-03-15T13:41:19.720+01:00] SESSION_END [session_1773578479_82859_op7]
+[2026-03-15T13:42:01.362+01:00] SESSION_START [session_1773578521_83852_op1] pid=83852 version=gh-app-auth args=[/tmp/go-build86685941/b292/logger.test -test.testlogfile=/tmp/go-build86685941/b292/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2026-03-15T13:42:01.365+01:00] DEBUG [session_1773578521_83852_op2] message=test debug test=value
+[2026-03-15T13:42:01.365+01:00] INFO [session_1773578521_83852_op3] message=test info test=value
+[2026-03-15T13:42:01.366+01:00] ERROR [session_1773578521_83852_op4] message=test error error=test test=value
+[2026-03-15T13:42:01.366+01:00] SESSION_END [session_1773578521_83852_op5]
+[2026-03-15T13:42:01.366+01:00] SESSION_START [session_1773578521_83852_op1] pid=83852 version=gh-app-auth args=[/tmp/go-build86685941/b292/logger.test -test.testlogfile=/tmp/go-build86685941/b292/testlog.txt -test.paniconexit0 -test.timeout=10m0s]
+[2026-03-15T13:42:01.366+01:00] FLOW_START [session_1773578521_83852_op2] operation=test_operation flow=START test_key=<redacted:secret:10> count=123
+[2026-03-15T13:42:01.366+01:00] FLOW_STEP [session_1773578521_83852_op3] step=step1 flow=STEP test_key=<redacted:secret:10> count=123
+[2026-03-15T13:42:01.366+01:00] FLOW_STEP [session_1773578521_83852_op4] test_key=<redacted:secret:10> count=123 step=step2 flow=STEP
+[2026-03-15T13:42:01.366+01:00] FLOW_SUCCESS [session_1773578521_83852_op5] operation=test_operation flow=SUCCESS test_key=<redacted:secret:10> count=123
+[2026-03-15T13:42:01.366+01:00] FLOW_ERROR [session_1773578521_83852_op6] operation=failed_operation flow=ERROR error=test error test_key=<redacted:secret:10> count=123
+[2026-03-15T13:42:01.366+01:00] SESSION_END [session_1773578521_83852_op7]

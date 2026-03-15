@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const windowsOS = "windows"
-
 func NewGitConfigCmd() *cobra.Command {
 	var (
 		sync   bool
