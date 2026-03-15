@@ -279,7 +279,7 @@ func verifyPATAccess(pat config.PersonalAccessToken, secretMgr *secrets.Manager)
 func loadListConfiguration() (*config.Config, error) {
 	cfg, err := config.Load()
 	if errors.Is(err, config.ErrConfigNotExists) {
-		fmt.Printf("No GitHub Apps configured. Run 'gh app-auth setup' to add one.\n")
+		fmt.Println("No GitHub Apps configured. Run 'gh app-auth setup' to add one.")
 		return nil, nil
 	}
 	if err != nil {
@@ -287,7 +287,7 @@ func loadListConfiguration() (*config.Config, error) {
 	}
 
 	if len(cfg.GitHubApps) == 0 && len(cfg.PATs) == 0 {
-		fmt.Printf("No GitHub Apps or Personal Access Tokens configured. Run 'gh app-auth setup' to add one.\n")
+		fmt.Println("No GitHub Apps or Personal Access Tokens configured. Run 'gh app-auth setup' to add one.")
 		return nil, nil
 	}
 

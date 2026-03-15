@@ -55,13 +55,13 @@ func configRun(showPath, showContent bool) error {
 	if !showContent {
 		fmt.Printf("📁 Configuration file: %s\n", configPath)
 		if envPath := os.Getenv("GH_APP_AUTH_CONFIG"); envPath != "" {
-			fmt.Printf("   (set via GH_APP_AUTH_CONFIG environment variable)\n")
+			fmt.Println("   (set via GH_APP_AUTH_CONFIG environment variable)")
 		}
 		if exists {
-			fmt.Printf("   Status: ✅ exists\n")
+			fmt.Println("   Status: ✅ exists")
 		} else {
-			fmt.Printf("   Status: ⚠️  not found\n")
-			fmt.Printf("\n💡 Run 'gh app-auth setup' to create a configuration.\n")
+			fmt.Println("   Status: ⚠️  not found")
+			fmt.Println("\n💡 Run 'gh app-auth setup' to create a configuration.")
 		}
 		return nil
 	}

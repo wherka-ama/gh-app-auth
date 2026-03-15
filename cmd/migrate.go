@@ -104,7 +104,7 @@ func initializeMigration(storage *string) (*config.Config, *secrets.Manager, err
 	// Load configuration
 	cfg, err := config.Load()
 	if os.IsNotExist(err) {
-		fmt.Printf("No configuration found. Nothing to migrate.\n")
+		fmt.Println("No configuration found. Nothing to migrate.")
 		return nil, nil, nil
 	}
 	if err != nil {
@@ -112,7 +112,7 @@ func initializeMigration(storage *string) (*config.Config, *secrets.Manager, err
 	}
 
 	if len(cfg.GitHubApps) == 0 {
-		fmt.Printf("No GitHub Apps configured. Nothing to migrate.\n")
+		fmt.Println("No GitHub Apps configured. Nothing to migrate.")
 		return nil, nil, nil
 	}
 
@@ -127,8 +127,8 @@ func initializeMigration(storage *string) (*config.Config, *secrets.Manager, err
 	// Check keyring availability
 	keyringAvailable := secretMgr.IsAvailable()
 	if *storage == storageKeyring && !keyringAvailable {
-		fmt.Printf("⚠️  Warning: Keyring not available on this system.\n")
-		fmt.Printf("   Migration will use filesystem storage instead.\n")
+		fmt.Println("⚠️  Warning: Keyring not available on this system.")
+		fmt.Println("   Migration will use filesystem storage instead.")
 		*storage = storageFilesystem
 	}
 
@@ -169,8 +169,8 @@ func displayMigrationSummary(
 	dryRun bool,
 ) bool {
 	// Display migration summary
-	fmt.Printf("📊 Migration Summary\n")
-	fmt.Printf("─────────────────────────────────────\n")
+	fmt.Println("📊 Migration Summary")
+	fmt.Println("─────────────────────────────────────")
 	fmt.Printf("Target Storage: %s\n", storage)
 	fmt.Printf("Total Apps: %d\n", len(allApps))
 	fmt.Printf("  • Need migration: %d\n", len(appsToMigrate))
@@ -178,7 +178,7 @@ func displayMigrationSummary(
 	if len(appsNeedAttention) > 0 {
 		fmt.Printf("  • Need attention: %d\n", len(appsNeedAttention))
 	}
-	fmt.Printf("\n")
+	fmt.Println()
 
 	if len(appsToMigrate) == 0 && len(appsNeedAttention) == 0 {
 		fmt.Printf("✅ All apps are already using %s storage. No migration needed.\n", storage)
@@ -187,16 +187,16 @@ func displayMigrationSummary(
 
 	// Show apps needing attention
 	if len(appsNeedAttention) > 0 {
-		fmt.Printf("⚠️  Apps needing attention (inline keys):\n")
+		fmt.Println("⚠️  Apps needing attention (inline keys):")
 		for _, app := range appsNeedAttention {
 			fmt.Printf("  • %s (ID: %d) - inline key detected\n", app.Name, app.AppID)
 		}
-		fmt.Printf("\n")
+		fmt.Println()
 	}
 
 	// Show apps to migrate
 	if len(appsToMigrate) > 0 {
-		fmt.Printf("🔄 Apps to migrate:\n")
+		fmt.Println("🔄 Apps to migrate:")
 		for _, app := range appsToMigrate {
 			currentSource := string(app.PrivateKeySource)
 			if currentSource == "" {
@@ -205,13 +205,13 @@ func displayMigrationSummary(
 			fmt.Printf("  • %s (ID: %d)\n", app.Name, app.AppID)
 			fmt.Printf("    From: %s → To: %s\n", currentSource, storage)
 		}
-		fmt.Printf("\n")
+		fmt.Println()
 	}
 
 	if dryRun {
-		fmt.Printf("🔍 Dry-run mode: No changes will be made.\n")
-		fmt.Printf("\nTo perform the migration, run without --dry-run:\n")
-		fmt.Printf("  gh app-auth migrate\n")
+		fmt.Println("🔍 Dry-run mode: No changes will be made.")
+		fmt.Println("\nTo perform the migration, run without --dry-run:")
+		fmt.Println("  gh app-auth migrate")
 		return true
 	}
 
@@ -231,7 +231,7 @@ func performMigration(
 	cfg *config.Config, appsToMigrate []config.GitHubApp, secretMgr *secrets.Manager,
 	storage string, force bool,
 ) (int, int) {
-	fmt.Printf("🚀 Starting migration...\n\n")
+	fmt.Print("🚀 Starting migration...\n\n")
 
 	migrated := 0
 	failed := 0
@@ -296,10 +296,10 @@ func migrateToKeyring(app *config.GitHubApp, secretMgr *secrets.Manager, private
 	}
 
 	if backend == secrets.StorageBackendKeyring {
-		fmt.Printf("    ✅ Migrated to encrypted keyring\n")
+		fmt.Println("    ✅ Migrated to encrypted keyring")
 		handleOriginalKeyFile(app, force)
 	} else {
-		fmt.Printf("    ⚠️  Fell back to filesystem storage\n")
+		fmt.Println("    ⚠️  Fell back to filesystem storage")
 	}
 
 	return nil
@@ -311,7 +311,7 @@ func migrateToFilesystem(app *config.GitHubApp) error {
 	if app.PrivateKeyPath == "" {
 		return fmt.Errorf("no filesystem path available, skipping")
 	}
-	fmt.Printf("    ✅ Migrated to filesystem storage\n")
+	fmt.Println("    ✅ Migrated to filesystem storage")
 	return nil
 }
 
@@ -321,7 +321,7 @@ func handleOriginalKeyFile(app *config.GitHubApp, force bool) {
 		if err := os.Remove(app.PrivateKeyPath); err != nil {
 			fmt.Printf("    ⚠️  Warning: Failed to remove original key file: %v\n", err)
 		} else {
-			fmt.Printf("    🗑️  Removed original key file\n")
+			fmt.Println("    🗑️  Removed original key file")
 		}
 	} else if app.PrivateKeyPath != "" {
 		fmt.Printf("    📝 Original key file kept as fallback: %s\n", app.PrivateKeyPath)
@@ -345,19 +345,19 @@ func saveConfigurationIfNeeded(cfg *config.Config, migrated int) error {
 
 // displayMigrationResults shows the migration results and next steps
 func displayMigrationResults(migrated, failed int, force bool, storage string) {
-	fmt.Printf("\n📊 Migration Results\n")
-	fmt.Printf("─────────────────────────────────────\n")
+	fmt.Println("\n📊 Migration Results")
+	fmt.Println("─────────────────────────────────────")
 	fmt.Printf("✅ Successfully migrated: %d\n", migrated)
 	if failed > 0 {
 		fmt.Printf("❌ Failed: %d\n", failed)
 	}
 
 	if migrated > 0 {
-		fmt.Printf("\n💡 Next steps:\n")
-		fmt.Printf("  1. Verify authentication: gh app-auth test --repo <repository-url>\n")
-		fmt.Printf("  2. Check key status: gh app-auth list --verify-keys\n")
+		fmt.Println("\n💡 Next steps:")
+		fmt.Println("  1. Verify authentication: gh app-auth test --repo <repository-url>")
+		fmt.Println("  2. Check key status: gh app-auth list --verify-keys")
 		if !force && storage == storageKeyring {
-			fmt.Printf("  3. If everything works, re-run with --force to remove original key files\n")
+			fmt.Println("  3. If everything works, re-run with --force to remove original key files")
 		}
 	}
 }

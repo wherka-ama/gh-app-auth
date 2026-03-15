@@ -86,7 +86,7 @@ func removeRun(appID *int64, patName *string, force, allApps, allPATs *bool) fun
 		// Load configuration
 		cfg, err := config.Load()
 		if os.IsNotExist(err) {
-			fmt.Printf("No GitHub Apps or Personal Access Tokens configured.\n")
+			fmt.Println("No GitHub Apps or Personal Access Tokens configured.")
 			return nil
 		}
 		if err != nil {
@@ -96,13 +96,13 @@ func removeRun(appID *int64, patName *string, force, allApps, allPATs *bool) fun
 		hasApps := len(cfg.GitHubApps) > 0
 		hasPATs := len(cfg.PATs) > 0
 		if !hasApps && !hasPATs {
-			fmt.Printf("No GitHub Apps or Personal Access Tokens configured.\n")
+			fmt.Println("No GitHub Apps or Personal Access Tokens configured.")
 			return nil
 		}
 
 		if *allApps {
 			if !hasApps {
-				fmt.Printf("No GitHub Apps configured.\n")
+				fmt.Println("No GitHub Apps configured.")
 				return nil
 			}
 			return removeAllApps(cfg, *force)
@@ -110,7 +110,7 @@ func removeRun(appID *int64, patName *string, force, allApps, allPATs *bool) fun
 
 		if *appID > 0 {
 			if !hasApps {
-				fmt.Printf("No GitHub Apps configured.\n")
+				fmt.Println("No GitHub Apps configured.")
 				return nil
 			}
 			return removeSingleApp(cfg, *appID, *force)
@@ -118,7 +118,7 @@ func removeRun(appID *int64, patName *string, force, allApps, allPATs *bool) fun
 
 		if *allPATs {
 			if !hasPATs {
-				fmt.Printf("No Personal Access Tokens configured.\n")
+				fmt.Println("No Personal Access Tokens configured.")
 				return nil
 			}
 			return removeAllPATs(cfg, *force)
@@ -126,7 +126,7 @@ func removeRun(appID *int64, patName *string, force, allApps, allPATs *bool) fun
 
 		// PAT by name
 		if !hasPATs {
-			fmt.Printf("No Personal Access Tokens configured.\n")
+			fmt.Println("No Personal Access Tokens configured.")
 			return nil
 		}
 		return removeSinglePAT(cfg, *patName, *force)
@@ -226,7 +226,7 @@ func findAppByID(cfg *config.Config, appID int64) (int, config.GitHubApp, error)
 
 // confirmAppRemoval prompts the user to confirm app removal
 func confirmAppRemoval(appToRemove config.GitHubApp) bool {
-	fmt.Printf("This will remove the following GitHub App configuration:\n")
+	fmt.Println("This will remove the following GitHub App configuration:")
 	fmt.Printf("  Name: %s\n", appToRemove.Name)
 	fmt.Printf("  App ID: %d\n", appToRemove.AppID)
 	fmt.Printf("  Patterns: %v\n", appToRemove.Patterns)
@@ -236,7 +236,7 @@ func confirmAppRemoval(appToRemove config.GitHubApp) bool {
 	_, _ = fmt.Scanln(&response) // Error is intentionally ignored - treat as "N"
 
 	if response != confirmY && response != confirmYCap && response != confirmYes && response != confirmYesCap {
-		fmt.Printf("Canceled.\n")
+		fmt.Println("Canceled.")
 		return false
 	}
 	return true
@@ -271,7 +271,7 @@ func performAppRemoval(cfg *config.Config, appIndex int, appToRemove config.GitH
 	}
 
 	fmt.Printf("✅ Successfully removed GitHub App '%s' (ID: %d)\n", appToRemove.Name, appID)
-	fmt.Printf("   🗑️  Private key deleted from secure storage\n")
+	fmt.Println("   🗑️  Private key deleted from secure storage")
 	return nil
 }
 
@@ -287,7 +287,7 @@ func confirmAllAppsRemoval(apps []config.GitHubApp) bool {
 	_, _ = fmt.Scanln(&response) // Error is intentionally ignored - treat as "N"
 
 	if response != confirmY && response != confirmYCap && response != confirmYes && response != confirmYesCap {
-		fmt.Printf("Canceled.\n")
+		fmt.Println("Canceled.")
 		return false
 	}
 	return true
@@ -329,7 +329,7 @@ func performAllAppsRemoval(cfg *config.Config) error {
 // displayAllAppsRemovalSuccess displays the success message for removing all apps
 func displayAllAppsRemovalSuccess(count int) {
 	fmt.Printf("✅ Successfully removed all %d GitHub Apps\n", count)
-	fmt.Printf("   🗑️  All private keys deleted from secure storage\n")
+	fmt.Println("   🗑️  All private keys deleted from secure storage")
 }
 
 func findPATByName(cfg *config.Config, name string) (int, config.PersonalAccessToken, error) {
@@ -342,7 +342,7 @@ func findPATByName(cfg *config.Config, name string) (int, config.PersonalAccessT
 }
 
 func confirmPATRemoval(patToRemove config.PersonalAccessToken) bool {
-	fmt.Printf("This will remove the following Personal Access Token configuration:\n")
+	fmt.Println("This will remove the following Personal Access Token configuration:")
 	fmt.Printf("  Name: %s\n", patToRemove.Name)
 	fmt.Printf("  Patterns: %v\n", patToRemove.Patterns)
 	fmt.Printf("  Priority: %d\n", patToRemove.Priority)
@@ -352,7 +352,7 @@ func confirmPATRemoval(patToRemove config.PersonalAccessToken) bool {
 	_, _ = fmt.Scanln(&response)
 
 	if response != confirmY && response != confirmYCap && response != confirmYes && response != confirmYesCap {
-		fmt.Printf("Canceled.\n")
+		fmt.Println("Canceled.")
 		return false
 	}
 	return true
@@ -369,7 +369,7 @@ func confirmAllPATsRemoval(pats []config.PersonalAccessToken) bool {
 	_, _ = fmt.Scanln(&response)
 
 	if response != confirmY && response != confirmYCap && response != confirmYes && response != confirmYesCap {
-		fmt.Printf("Canceled.\n")
+		fmt.Println("Canceled.")
 		return false
 	}
 	return true
@@ -394,7 +394,7 @@ func performPATRemoval(cfg *config.Config, patIndex int, patToRemove config.Pers
 	}
 
 	fmt.Printf("✅ Successfully removed Personal Access Token '%s'\n", patToRemove.Name)
-	fmt.Printf("   🗑️  Token deleted from secure storage\n")
+	fmt.Println("   🗑️  Token deleted from secure storage")
 	return nil
 }
 
@@ -423,5 +423,5 @@ func performAllPATsRemoval(cfg *config.Config) error {
 
 func displayAllPATsRemovalSuccess(count int) {
 	fmt.Printf("✅ Successfully removed all %d Personal Access Tokens\n", count)
-	fmt.Printf("   🗑️  All tokens deleted from secure storage\n")
+	fmt.Println("   🗑️  All tokens deleted from secure storage")
 }

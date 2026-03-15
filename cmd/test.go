@@ -252,7 +252,7 @@ func determineRepositoryURL(repo string) (string, error) {
 
 func runAuthenticationTests(cfg *config.Config, repoURL string, verbose bool) error {
 	if verbose {
-		fmt.Printf("Step 1: Finding matching credential...\n")
+		fmt.Println("Step 1: Finding matching credential...")
 	}
 
 	matchedApp, matchedPAT, err := findMatchingCredential(cfg, repoURL)
@@ -306,7 +306,7 @@ func runPATAuthenticationTests(matchedPAT *config.PersonalAccessToken, repoURL s
 	}
 
 	if verbose {
-		fmt.Printf("Step 2: Retrieving Personal Access Token...\n")
+		fmt.Println("Step 2: Retrieving Personal Access Token...")
 	}
 
 	token, err := matchedPAT.GetPAT(secretMgr)
@@ -315,9 +315,9 @@ func runPATAuthenticationTests(matchedPAT *config.PersonalAccessToken, repoURL s
 	}
 
 	if verbose {
-		fmt.Printf("✅ PAT retrieved successfully\n\n")
+		fmt.Print("✅ PAT retrieved successfully\n\n")
 	} else {
-		fmt.Printf("✅ PAT retrieved from secure storage\n")
+		fmt.Println("✅ PAT retrieved from secure storage")
 	}
 
 	return testGitHubAPIAccess("Step 3: ", token, repoURL, verbose)
@@ -326,7 +326,7 @@ func runPATAuthenticationTests(matchedPAT *config.PersonalAccessToken, repoURL s
 // testJWTGeneration tests JWT token generation
 func testJWTGeneration(matchedApp *config.GitHubApp, verbose bool) (string, error) {
 	if verbose {
-		fmt.Printf("Step 2: Testing JWT generation...\n")
+		fmt.Println("Step 2: Testing JWT generation...")
 	}
 
 	authenticator := auth.NewAuthenticator()
@@ -336,10 +336,10 @@ func testJWTGeneration(matchedApp *config.GitHubApp, verbose bool) (string, erro
 	}
 
 	if verbose {
-		fmt.Printf("✅ JWT token generated successfully\n")
+		fmt.Println("✅ JWT token generated successfully")
 		fmt.Printf("   Token length: %d characters\n\n", len(jwtToken))
 	} else {
-		fmt.Printf("✅ JWT generation successful\n")
+		fmt.Println("✅ JWT generation successful")
 	}
 
 	return jwtToken, nil
@@ -350,7 +350,7 @@ func testInstallationTokenGeneration(
 	jwtToken string, matchedApp *config.GitHubApp, repoURL string, verbose bool,
 ) (string, error) {
 	if verbose {
-		fmt.Printf("Step 3: Testing installation token generation...\n")
+		fmt.Println("Step 3: Testing installation token generation...")
 	}
 
 	authenticator := auth.NewAuthenticator()
@@ -360,10 +360,10 @@ func testInstallationTokenGeneration(
 	}
 
 	if verbose {
-		fmt.Printf("✅ Installation token generated successfully\n")
+		fmt.Println("✅ Installation token generated successfully")
 		fmt.Printf("   Token length: %d characters\n\n", len(installationToken))
 	} else {
-		fmt.Printf("✅ Installation token generation successful\n")
+		fmt.Println("✅ Installation token generation successful")
 	}
 
 	return installationToken, nil
@@ -380,9 +380,9 @@ func testGitHubAPIAccess(stepLabel string, token, repoURL string, verbose bool) 
 	}
 
 	if verbose {
-		fmt.Printf("✅ GitHub API access successful\n\n")
+		fmt.Print("✅ GitHub API access successful\n\n")
 	} else {
-		fmt.Printf("✅ GitHub API access successful\n")
+		fmt.Println("✅ GitHub API access successful")
 	}
 
 	return nil
@@ -390,11 +390,11 @@ func testGitHubAPIAccess(stepLabel string, token, repoURL string, verbose bool) 
 
 // displayTestResults shows the final test results and usage instructions
 func displayTestResults(verbose bool) {
-	fmt.Printf("\n🎉 All tests passed! Authentication is working correctly.\n")
+	fmt.Println("\n🎉 All tests passed! Authentication is working correctly.")
 
 	if !verbose {
-		fmt.Printf("\nNext steps:\n")
-		fmt.Printf("  gh app-auth gitconfig --sync --global\n")
-		fmt.Printf("    # or run 'gh app-auth gitconfig --sync --local' inside a repository\n")
+		fmt.Println("\nNext steps:")
+		fmt.Println("  gh app-auth gitconfig --sync --global")
+		fmt.Println("    # or run 'gh app-auth gitconfig --sync --local' inside a repository")
 	}
 }
