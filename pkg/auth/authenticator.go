@@ -22,6 +22,8 @@ import (
 
 const (
 	gitHubAPIHost = "github.com"
+	configDirPath = ".config/gh/extensions/gh-app-auth"
+	apiTimeout    = 30 * time.Second
 )
 
 // Authenticator handles GitHub App authentication.
@@ -37,7 +39,7 @@ type Authenticator struct {
 func NewAuthenticator() *Authenticator {
 	// Initialize secrets manager
 	homeDir, _ := os.UserHomeDir()
-	configDir := filepath.Join(homeDir, ".config", "gh", "extensions", "gh-app-auth")
+	configDir := filepath.Join(homeDir, configDirPath)
 
 	return &Authenticator{
 		jwtGenerator:   jwt.NewGenerator(),
@@ -122,7 +124,7 @@ func (a *Authenticator) GetInstallationToken(jwtToken string, installationID int
 		apiURL = fmt.Sprintf("https://api.github.com/app/installations/%d/access_tokens", installationID)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader([]byte("{}")))
@@ -178,7 +180,7 @@ func (a *Authenticator) findInstallationIDHTTP(jwtToken, host, repoURL string) (
 		apiURL = fmt.Sprintf("https://api.github.com/repos/%s/%s/installation", owner, repo)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), apiTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
@@ -189,12 +191,14 @@ func (a *Authenticator) findInstallationIDHTTP(jwtToken, host, repoURL string) (
 	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get installation: %w", err)
 	}
 	defer func() {
+		// Drain and close response body for connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body)
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
 		}
