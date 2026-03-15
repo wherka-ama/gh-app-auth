@@ -1,0 +1,156 @@
+# Architecture Rules for gh-app-auth
+# Machine-readable constraints for AI agents to evaluate against the codebase.
+
+rules:
+
+  # --- Layer Isolation ---
+
+  - id: ARCH-001
+    description: pkg packages must not import cmd package
+    severity: P1
+    category: architecture
+    check: no_import
+    source: pkg/**
+    forbidden: cmd/**
+
+  - id: ARCH-002
+    description: Core packages must not import CLI framework (cobra)
+    severity: P1
+    category: architecture
+    check: no_import
+    source: [pkg/auth, pkg/jwt, pkg/cache, pkg/matcher, pkg/secrets, pkg/logger, pkg/scope]
+    forbidden: github.com/spf13/cobra
+
+  - id: ARCH-003
+    description: Pure packages must not import config (maintain independence)
+    severity: P2
+    category: architecture
+    check: no_import
+    source: [pkg/cache, pkg/jwt, pkg/matcher, pkg/logger]
+    forbidden: pkg/config
+
+  # --- Security ---
+
+  - id: SEC-001
+    description: Never log tokens, keys, or passwords in plain text
+    severity: P0
+    category: security
+    check: no_pattern
+    patterns:
+      - 'fmt.Print.*token[^H]'
+      - 'fmt.Print.*password'
+      - 'fmt.Print.*privateKey'
+      - 'log.Print.*token[^H]'
+    exclude: [_test.go]
+
+  - id: SEC-002
+    description: Private key files must validate permissions before reading
+    severity: P0
+    category: security
+    check: manual
+    files: [pkg/secrets/secrets.go, cmd/setup.go]
+
+  - id: SEC-003
+    description: HTTP clients must have timeouts
+    severity: P1
+    category: security
+    check: no_pattern
+    patterns:
+      - '&http.Client{}'
+      - 'http.Client{}'
+    note: Use httpclient.Default() or httpclient.New(timeout)
+
+  - id: SEC-004
+    description: No hardcoded credentials or test secrets
+    severity: P0
+    category: security
+    check: no_pattern
+    patterns:
+      - 'password\s*[:=]\s*"[^"]+'
+      - 'apikey\s*[:=]\s*"[^"]+'
+      - 'secret\s*[:=]\s*"[^"]+'
+    exclude: [_test.go, testutil/]
+
+  # --- Code Quality ---
+
+  - id: QUAL-001
+    description: Errors must be wrapped with context
+    severity: P2
+    category: quality
+    check: no_pattern
+    patterns:
+      - 'return err$'
+    note: 'Use fmt.Errorf("context: %w", err)'
+
+  - id: QUAL-002
+    description: No panic outside initialization
+    severity: P2
+    category: quality
+    check: no_pattern
+    patterns:
+      - 'panic('
+    exclude: [main.go, _test.go]
+
+  - id: QUAL-003
+    description: Response bodies must be drained and closed
+    severity: P2
+    category: quality
+    check: manual
+    note: Use io.Copy(io.Discard, resp.Body) before resp.Body.Close()
+
+  # --- Performance ---
+
+  - id: PERF-001
+    description: Slices with known capacity should be pre-allocated
+    severity: P3
+    category: performance
+    check: advisory
+    note: Use make([]T, 0, expectedSize) when size is predictable
+
+  - id: PERF-002
+    description: String concatenation in loops should use strings.Builder
+    severity: P3
+    category: performance
+    check: advisory
+    note: Replace += in loops with strings.Builder
+
+  - id: PERF-003
+    description: Avoid fmt.Sprintf in hot paths when simpler alternatives exist
+    severity: P4
+    category: performance
+    check: advisory
+
+  # --- Concurrency ---
+
+  - id: CONC-001
+    description: All goroutines must have cancellation mechanism
+    severity: P1
+    category: concurrency
+    check: manual
+    note: Use context.Context or done channels
+
+  - id: CONC-002
+    description: Shared state must be protected by mutex or channels
+    severity: P1
+    category: concurrency
+    check: manual
+
+  # --- Testing ---
+
+  - id: TEST-001
+    description: New code must have corresponding tests
+    severity: P2
+    category: testing
+    check: advisory
+
+  - id: TEST-002
+    description: Tests must use t.TempDir() for file operations
+    severity: P3
+    category: testing
+    check: advisory
+
+  - id: TEST-003
+    description: Tests must use table-driven pattern for multiple scenarios
+    severity: P4
+    category: testing
+    check: advisory

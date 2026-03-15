@@ -1,0 +1,164 @@
+# Review Checklist for gh-app-auth
+# Structured evaluation criteria for AI agents performing code reviews.
+# Derived from L3 spec (200+ verification questions), filtered for CLI tools.
+
+categories:
+
+  - name: Repository Structure
+    items:
+      - id: RS-01
+        question: Does the repository follow cmd/ + pkg/ Go layout?
+        severity: P1
+      - id: RS-02
+        question: Is each package single-responsibility?
+        severity: P2
+      - id: RS-03
+        question: Are test utilities separated in test/testutil/?
+        severity: P4
+
+  - name: Security
+    items:
+      - id: SEC-01
+        question: Are all tokens, keys, passwords never logged in plain text?
+        severity: P0
+      - id: SEC-02
+        question: Are private key file permissions validated (600/400)?
+        severity: P0
+      - id: SEC-03
+        question: Are tokens cached in memory only (never persisted to disk)?
+        severity: P0
+      - id: SEC-04
+        question: Is OS keyring preferred over filesystem for secrets?
+        severity: P1
+      - id: SEC-05
+        question: Are HTTP clients configured with timeouts?
+        severity: P1
+      - id: SEC-06
+        question: Is path traversal prevented (../ rejected)?
+        severity: P1
+      - id: SEC-07
+        question: Are no hardcoded credentials in source code?
+        severity: P0
+      - id: SEC-08
+        question: Is secrets.HashToken() used for debug logging of tokens?
+        severity: P1
+
+  - name: Error Handling
+    items:
+      - id: ERR-01
+        question: Are all errors returned and checked (no _ = err)?
+        severity: P2
+      - id: ERR-02
+        question: Are errors wrapped with context using fmt.Errorf %w?
+        severity: P2
+      - id: ERR-03
+        question: Do error messages avoid exposing sensitive information?
+        severity: P1
+      - id: ERR-04
+        question: Are sentinel errors used for recoverable conditions?
+        severity: P3
+      - id: ERR-05
+        question: Are panics avoided outside initialization code?
+        severity: P2
+
+  - name: Concurrency Safety
+    items:
+      - id: CON-01
+        question: Are all goroutines bounded and cancellable?
+        severity: P1
+      - id: CON-02
+        question: Is shared state protected by mutex or channels?
+        severity: P1
+      - id: CON-03
+        question: Are channels closed correctly (sender closes)?
+        severity: P2
+      - id: CON-04
+        question: Do timeout goroutines use buffered channels?
+        severity: P2
+
+  - name: Resource Management
+    items:
+      - id: RES-01
+        question: Are HTTP response bodies drained and closed?
+        severity: P2
+      - id: RES-02
+        question: Are file handles closed with defer?
+        severity: P2
+      - id: RES-03
+        question: Are context timeouts used for external calls?
+        severity: P1
+
+  - name: Performance
+    items:
+      - id: PERF-01
+        question: Are slices pre-allocated when capacity is known?
+        severity: P3
+      - id: PERF-02
+        question: Is strings.Builder used instead of += in loops?
+        severity: P3
+      - id: PERF-03
+        question: Is fmt.Sprintf avoided in hot paths when unnecessary?
+        severity: P4
+      - id: PERF-04
+        question: Is the HTTP client reused (connection pooling)?
+        severity: P2
+
+  - name: Testing
+    items:
+      - id: TST-01
+        question: Is test coverage above 70% overall?
+        severity: P2
+      - id: TST-02
+        question: Are table-driven tests used for multiple scenarios?
+        severity: P3
+      - id: TST-03
+        question: Do tests use t.TempDir() for file operations?
+        severity: P3
+      - id: TST-04
+        question: Do tests use t.Setenv() for environment variables?
+        severity: P3
+      - id: TST-05
+        question: Are security-critical paths tested (auth, jwt, secrets)?
+        severity: P1
+
+  - name: Code Quality
+    items:
+      - id: CQ-01
+        question: Are magic numbers replaced with named constants?
+        severity: P3
+      - id: CQ-02
+        question: Are imports organized (stdlib, external, internal)?
+        severity: P4
+      - id: CQ-03
+        question: Is cyclomatic complexity below 15 per function?
+        severity: P3
+      - id: CQ-04
+        question: Are functions reasonably short (<50 lines)?
+        severity: P4
+      - id: CQ-05
+        question: Do Cobra commands follow NewXxxCmd() pattern?
+        severity: P4
+
+  - name: Dependencies
+    items:
+      - id: DEP-01
+        question: Are dependencies actively maintained?
+        severity: P2
+      - id: DEP-02
+        question: Are unused dependencies removed?
+        severity: P3
+      - id: DEP-03
+        question: Are dependencies scanned for vulnerabilities?
+        severity: P1
+
+  - name: Documentation
+    items:
+      - id: DOC-01
+        question: Is README.md comprehensive and up-to-date?
+        severity: P3
+      - id: DOC-02
+        question: Do all markdown files pass markdownlint?
+        severity: P2
+      - id: DOC-03
+        question: Are public APIs documented?
+        severity: P3

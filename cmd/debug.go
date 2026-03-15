@@ -271,6 +271,7 @@ func listInstallations(jwtToken string) ([]installation, error) {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body)
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
 		}
@@ -321,6 +322,7 @@ func listInstallationRepositories(token, host string) ([]installationRepository,
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body)
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
 		}

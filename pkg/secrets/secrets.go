@@ -154,7 +154,10 @@ func (m *Manager) storeInKeyring(appName string, secretType SecretType, value st
 
 	select {
 	case err := <-ch:
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to store secret in keyring: %w", err)
+		}
+		return nil
 	case <-time.After(m.keyringTimeout):
 		return ErrTimeout
 	}
@@ -206,7 +209,10 @@ func (m *Manager) deleteFromKeyring(appName string, secretType SecretType) error
 		if errors.Is(err, keyring.ErrNotFound) {
 			return ErrNotFound
 		}
-		return err
+		if err != nil {
+			return fmt.Errorf("failed to delete secret from keyring: %w", err)
+		}
+		return nil
 	case <-time.After(m.keyringTimeout):
 		return ErrTimeout
 	}
@@ -252,7 +258,10 @@ func (m *Manager) deleteFromFilesystem(appName string, secretType SecretType) er
 	if os.IsNotExist(err) {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete secret file: %w", err)
+	}
+	return nil
 }
 
 // keyringService returns the keyring service name for an app

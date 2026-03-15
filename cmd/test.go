@@ -131,6 +131,7 @@ func testAPIAccess(token, repoURL string, verbose bool) error {
 		return fmt.Errorf("API request failed: %w", err)
 	}
 	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body)
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
 		}

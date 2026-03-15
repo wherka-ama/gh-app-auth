@@ -1,0 +1,87 @@
+# Agent Configuration for gh-app-auth
+# Consumed by AI coding agents to understand project context and quality targets.
+
+project:
+  name: gh-app-auth
+  type: go-cli-extension
+  module: github.com/AmadeusITGroup/gh-app-auth
+  go_version: "1.24"
+  description: GitHub CLI extension for Git credential authentication using GitHub Apps and PATs
+
+architecture:
+  pattern: cmd-pkg-flat
+  layers:
+    - name: cmd
+      path: cmd/
+      role: CLI entry points (Cobra commands)
+      may_import: [pkg/*]
+    - name: auth
+      path: pkg/auth/
+      role: Core authentication logic
+      may_import: [pkg/cache, pkg/config, pkg/jwt, pkg/secrets, pkg/logger, pkg/matcher]
+    - name: config
+      path: pkg/config/
+      role: Configuration management
+      may_import: [pkg/secrets]
+    - name: jwt
+      path: pkg/jwt/
+      role: JWT token generation
+      may_import: []
+    - name: secrets
+      path: pkg/secrets/
+      role: Secure storage (keyring/filesystem)
+      may_import: []
+    - name: cache
+      path: pkg/cache/
+      role: In-memory token caching
+      may_import: []
+    - name: matcher
+      path: pkg/matcher/
+      role: URL pattern matching
+      may_import: []
+    - name: logger
+      path: pkg/logger/
+      role: Diagnostic logging
+      may_import: []
+    - name: scope
+      path: pkg/scope/
+      role: Credential scope detection
+      may_import: [pkg/config, pkg/matcher]
+
+quality_targets:
+  test_coverage_overall: 70
+  test_coverage_minimum_per_package: 60
+  max_cyclomatic_complexity: 15
+  max_package_loc: 2000
+  max_package_files: 10
+  max_direct_dependencies: 30
+  lint_errors: 0
+  security_critical_vulnerabilities: 0
+
+validation_commands:
+  build: go build -o gh-app-auth .
+  test: go test ./...
+  test_race: go test -race ./...
+  lint: make lint
+  full_ci: make ci
+  security: make security-scan
+  format: make fmt
+  markdown: make markdownlint
+
+commit_policy:
+  convention: conventional-commits
+  types: [feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert]
+  scopes: [auth, config, cli, cache, security, docs, ci, deps]
+  require_passing_ci: true
+  require_no_coverage_regression: true
+
+security:
+  classification: authentication-critical
+  never_log_plaintext: [tokens, private_keys, passwords, api_keys]
+  hash_function_for_debug: secrets.HashToken
+  file_permissions:
+    private_keys: "0400"
+    config_files: "0600"
+    directories: "0700"
+  token_storage: memory-only
+  token_ttl_minutes: 55

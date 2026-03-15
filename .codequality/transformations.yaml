@@ -1,0 +1,185 @@
+# Refactoring Transformation Catalog for gh-app-auth
+# Safe, mechanical code transformations that AI agents can apply.
+# Derived from L9 spec (60+ transformations), filtered for CLI tools.
+
+transformations:
+
+  # --- Security Hardening ---
+
+  - id: T-SEC-01
+    name: Add HTTP client timeout
+    trigger: "http.Client{} without Timeout field"
+    severity: P1
+    before: |
+      client := &http.Client{}
+    after: |
+      client := httpclient.Default()
+    validation: [build, test]
+
+  - id: T-SEC-02
+    name: Drain response body before close
+    trigger: "resp.Body.Close() without io.Copy drain"
+    severity: P2
+    before: |
+      defer resp.Body.Close()
+    after: |
+      defer func() {
+          _, _ = io.Copy(io.Discard, resp.Body)
+          resp.Body.Close()
+      }()
+    validation: [build, test]
+
+  - id: T-SEC-03
+    name: Hash tokens in debug logging
+    trigger: "token value logged without hashing"
+    severity: P0
+    before: |
+      logger.Debug("token", "value", token)
+    after: |
+      logger.Debug("token", "hash", secrets.HashToken(token))
+    validation: [build, test]
+
+  # --- Error Handling ---
+
+  - id: T-ERR-01
+    name: Wrap errors with context
+    trigger: "bare return err without wrapping"
+    severity: P2
+    before: |
+      return err
+    after: |
+      return fmt.Errorf("operation context: %w", err)
+    validation: [build, test]
+
+  - id: T-ERR-02
+    name: Check error return values
+    trigger: "_ = functionThatReturnsError()"
+    severity: P2
+    before: |
+      _ = file.Close()
+    after: |
+      if err := file.Close(); err != nil {
+          return fmt.Errorf("failed to close file: %w", err)
+      }
+    validation: [build, test]
+
+  # --- Performance ---
+
+  - id: T-PERF-01
+    name: Pre-allocate slices
+    trigger: "append to nil/empty slice in loop with known size"
+    severity: P3
+    before: |
+      var items []string
+      for _, x := range source {
+          items = append(items, x)
+      }
+    after: |
+      items := make([]string, 0, len(source))
+      for _, x := range source {
+          items = append(items, x)
+      }
+    validation: [build, test]
+
+  - id: T-PERF-02
+    name: Use strings.Builder in loops
+    trigger: "string concatenation with += in loop"
+    severity: P3
+    before: |
+      result := ""
+      for _, s := range items {
+          result += s
+      }
+    after: |
+      var b strings.Builder
+      for _, s := range items {
+          b.WriteString(s)
+      }
+      result := b.String()
+    validation: [build, test]
+
+  # --- Code Quality ---
+
+  - id: T-QUAL-01
+    name: Replace magic numbers with constants
+    trigger: "numeric literal used more than once"
+    severity: P3
+    before: |
+      cache.Set(key, value, 55*time.Minute)
+    after: |
+      const DefaultTokenCacheTTL = 55 * time.Minute
+      cache.Set(key, value, DefaultTokenCacheTTL)
+    validation: [build, test]
+
+  - id: T-QUAL-02
+    name: Add context propagation
+    trigger: "I/O function without context.Context parameter"
+    severity: P2
+    before: |
+      func FetchData(url string) error
+    after: |
+      func FetchData(ctx context.Context, url string) error
+    validation: [build, test]
+
+  - id: T-QUAL-03
+    name: Use fmt.Println for static strings
+    trigger: "fmt.Printf with no format verbs"
+    severity: P4
+    before: |
+      fmt.Printf("Operation completed\n")
+    after: |
+      fmt.Println("Operation completed")
+    validation: [build]
+
+  # --- Concurrency ---
+
+  - id: T-CONC-01
+    name: Add context cancellation to goroutines
+    trigger: "go func() without context or done channel"
+    severity: P1
+    before: |
+      go func() {
+          doWork()
+      }()
+    after: |
+      go func(ctx context.Context) {
+          select {
+          case <-ctx.Done():
+              return
+          default:
+              doWork()
+          }
+      }(ctx)
+    validation: [build, test, race]
+
+  - id: T-CONC-02
+    name: Protect shared state with mutex
+    trigger: "map or slice accessed from multiple goroutines without sync"
+    severity: P1
+    before: |
+      var cache map[string]string
+    after: |
+      type safeCache struct {
+          mu   sync.RWMutex
+          data map[string]string
+      }
+    validation: [build, test, race]
+
+  # --- Testing ---
+
+  - id: T-TEST-01
+    name: Convert to table-driven tests
+    trigger: "multiple similar test functions testing same function"
+    severity: P4
+    validation: [test]
+
+  - id: T-TEST-02
+    name: Use t.TempDir for file operations
+    trigger: "os.MkdirTemp or manual temp dir in tests"
+    severity: P3
+    before: |
+      dir, _ := os.MkdirTemp("", "test")
+      defer os.RemoveAll(dir)
+    after: |
+      dir := t.TempDir()
+    validation: [test]
