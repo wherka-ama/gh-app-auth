@@ -21,11 +21,7 @@ func generateTestKey() (*rsa.PrivateKey, error) {
 // writeTestKeyFile writes a test private key to a temporary file
 func writeTestKeyFile(t *testing.T, key *rsa.PrivateKey, format string) string {
 	t.Helper()
-	tmpDir, err := os.MkdirTemp("", "jwt-test-key")
-	if err != nil {
-		t.Fatalf("Failed to create temp dir: %v", err)
-	}
-	t.Cleanup(func() { os.RemoveAll(tmpDir) })
+	tmpDir := t.TempDir()
 
 	keyPath := filepath.Join(tmpDir, "test-key.pem")
 
@@ -193,11 +189,7 @@ func TestGenerator_GenerateToken_Errors(t *testing.T) {
 			appID: 12345,
 			setupKeyFile: func(t *testing.T) string {
 				t.Helper()
-				tmpDir, err := os.MkdirTemp("", "jwt-test-invalid")
-				if err != nil {
-					t.Fatalf("Failed to create temp dir: %v", err)
-				}
-				t.Cleanup(func() { os.RemoveAll(tmpDir) })
+				tmpDir := t.TempDir()
 
 				keyPath := filepath.Join(tmpDir, "invalid.pem")
 				if err := os.WriteFile(keyPath, []byte("not a pem file"), 0600); err != nil {
@@ -212,11 +204,7 @@ func TestGenerator_GenerateToken_Errors(t *testing.T) {
 			appID: 12345,
 			setupKeyFile: func(t *testing.T) string {
 				t.Helper()
-				tmpDir, err := os.MkdirTemp("", "jwt-test-unsupported")
-				if err != nil {
-					t.Fatalf("Failed to create temp dir: %v", err)
-				}
-				t.Cleanup(func() { os.RemoveAll(tmpDir) })
+				tmpDir := t.TempDir()
 
 				keyPath := filepath.Join(tmpDir, "unsupported.pem")
 				block := &pem.Block{
@@ -247,11 +235,7 @@ func TestGenerator_GenerateToken_Errors(t *testing.T) {
 			appID: 12345,
 			setupKeyFile: func(t *testing.T) string {
 				t.Helper()
-				tmpDir, err := os.MkdirTemp("", "jwt-test-perms")
-				if err != nil {
-					t.Fatalf("Failed to create temp dir: %v", err)
-				}
-				t.Cleanup(func() { os.RemoveAll(tmpDir) })
+				tmpDir := t.TempDir()
 
 				keyPath := filepath.Join(tmpDir, "no-perms.pem")
 				if err := os.WriteFile(keyPath, []byte("test"), 0000); err != nil {
