@@ -184,8 +184,9 @@ func findMatchingCredential(
 	cfg *config.Config, repoURL string,
 ) (*config.GitHubApp, *config.PersonalAccessToken, error) {
 	// Find matching apps and PATs
-	var matchedApps []*config.GitHubApp
-	var matchedPATs []*config.PersonalAccessToken
+	// Pre-allocate with small capacity to avoid initial allocations
+	matchedApps := make([]*config.GitHubApp, 0, 2)
+	matchedPATs := make([]*config.PersonalAccessToken, 0, 2)
 
 	// Match GitHub Apps
 	app := findAppByPattern(cfg, repoURL)

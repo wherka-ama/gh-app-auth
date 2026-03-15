@@ -90,17 +90,21 @@ func (d *DiagnosticLogger) logEntry(event string, data map[string]interface{}) {
 	timestamp := time.Now().Format("2006-01-02T15:04:05.000Z07:00")
 	opID := fmt.Sprintf("%s_op%d", d.sessionID, d.operationCounter)
 
-	// Build log entry
-	entry := fmt.Sprintf("[%s] %s [%s]", timestamp, event, opID)
+	// Build log entry using strings.Builder for efficient concatenation
+	var builder strings.Builder
+	// Pre-allocate approximate capacity: timestamp(30) + event(20) + opID(30) + data fields
+	builder.Grow(80 + len(data)*30)
+
+	fmt.Fprintf(&builder, "[%s] %s [%s]", timestamp, event, opID)
 
 	// Add data fields with automatic sanitization of sensitive keys
 	for key, value := range data {
 		// Sanitize sensitive fields before logging
 		sanitizedValue := sanitizeValueForLogging(key, value)
-		entry += fmt.Sprintf(" %s=%v", key, sanitizedValue)
+		fmt.Fprintf(&builder, " %s=%v", key, sanitizedValue)
 	}
 
-	d.logger.Println(entry)
+	d.logger.Println(builder.String())
 }
 
 // Flow tracking functions
