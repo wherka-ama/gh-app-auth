@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/auth"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
+	"github.com/AmadeusITGroup/gh-app-auth/pkg/httpclient"
 	"github.com/spf13/cobra"
 )
 
@@ -254,7 +254,7 @@ type account struct {
 func listInstallations(jwtToken string) ([]installation, error) {
 	apiURL := "https://api.github.com/app/installations"
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), httpclient.DefaultTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
@@ -265,7 +265,7 @@ func listInstallations(jwtToken string) ([]installation, error) {
 	req.Header.Set("Authorization", "Bearer "+jwtToken)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
@@ -304,7 +304,7 @@ func listInstallationRepositories(token, host string) ([]installationRepository,
 		apiURL = "https://api.github.com/installation/repositories"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), httpclient.DefaultTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
@@ -315,7 +315,7 @@ func listInstallationRepositories(token, host string) ([]installationRepository,
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.github+json")
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)

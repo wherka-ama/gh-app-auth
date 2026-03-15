@@ -9,10 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/auth"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
+	"github.com/AmadeusITGroup/gh-app-auth/pkg/httpclient"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/secrets"
 	"github.com/spf13/cobra"
 )
@@ -114,10 +114,10 @@ func testAPIAccess(token, repoURL string, verbose bool) error {
 	}
 
 	// Make HTTP request
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), httpclient.DefaultTimeout)
 	defer cancel()
 
-	client := &http.Client{}
+	client := httpclient.Default()
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)

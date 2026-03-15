@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/config"
 	"github.com/AmadeusITGroup/gh-app-auth/pkg/httpclient"
@@ -509,7 +508,7 @@ func findInstallationForOrg(jwtToken, host, org string) (int64, error) {
 		apiURL = fmt.Sprintf("https://%s/api/v3/app/installations", host)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), httpclient.DefaultTimeout)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
