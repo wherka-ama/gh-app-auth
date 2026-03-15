@@ -7,6 +7,17 @@ import (
 	"time"
 )
 
+const (
+	// GitHubTokenValidityDuration is how long GitHub installation tokens are valid
+	GitHubTokenValidityDuration = 60 * time.Minute
+
+	// DefaultTokenCacheTTL is the default TTL for cached tokens (5-min safety buffer)
+	DefaultTokenCacheTTL = 55 * time.Minute
+
+	// DefaultCleanupInterval is how often expired tokens are cleaned up
+	DefaultCleanupInterval = 5 * time.Minute
+)
+
 // TokenCache provides thread-safe caching of GitHub App installation tokens with TTL.
 //
 // SECURITY NOTE: This cache stores installation tokens IN MEMORY ONLY. Tokens are

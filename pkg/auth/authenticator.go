@@ -78,7 +78,7 @@ func (a *Authenticator) GetCredentials(app *config.GitHubApp, repoURL string) (t
 
 	// Cache the token for 55 minutes (GitHub tokens valid for 60 minutes, 5-min buffer)
 	// SECURITY: Token stored in memory only, not persisted to disk. See docs/TOKEN_CACHING.md
-	a.tokenCache.Set(cacheKey, installationToken, 55*time.Minute)
+	a.tokenCache.Set(cacheKey, installationToken, cache.DefaultTokenCacheTTL)
 
 	// Return credentials
 	username = fmt.Sprintf("%s[bot]", app.Name)

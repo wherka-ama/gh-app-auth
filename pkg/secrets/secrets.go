@@ -12,6 +12,17 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
+const (
+	// DefaultKeyringTimeout is the default timeout for keyring operations
+	DefaultKeyringTimeout = 3 * time.Second
+
+	// SecureFilePermissions is the permission for secret files (owner read-only)
+	SecureFilePermissions = 0400
+
+	// SecureDirPermissions is the permission for secret directories (owner read/write/execute)
+	SecureDirPermissions = 0700
+)
+
 // Common errors returned by the secrets manager
 var (
 	ErrNotFound           = errors.New("secret not found")
@@ -52,7 +63,7 @@ type Manager struct {
 // NewManager creates a new secrets manager with the specified fallback directory
 func NewManager(fallbackDir string) *Manager {
 	return &Manager{
-		keyringTimeout: 3 * time.Second,
+		keyringTimeout: DefaultKeyringTimeout,
 		fallbackDir:    fallbackDir,
 	}
 }
@@ -207,12 +218,12 @@ func (m *Manager) storeInFilesystem(appName string, secretType SecretType, value
 
 	// Ensure directory exists with secure permissions
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	if err := os.MkdirAll(dir, SecureDirPermissions); err != nil {
 		return fmt.Errorf("failed to create secrets directory: %w", err)
 	}
 
 	// Write with secure permissions (owner read-only)
-	if err := os.WriteFile(path, []byte(value), 0400); err != nil {
+	if err := os.WriteFile(path, []byte(value), SecureFilePermissions); err != nil {
 		return fmt.Errorf("failed to write secret file: %w", err)
 	}
 
