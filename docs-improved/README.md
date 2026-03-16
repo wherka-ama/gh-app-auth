@@ -50,8 +50,7 @@ credentials for a URL, the helper compares the URL against configured prefixes
 For GitHub Apps this means generating a JWT and exchanging it for a short-lived
 installation token. For PATs the stored token is returned directly.
 
-Installation tokens are cached in memory for 55 minutes (GitHub grants
-60-minute validity) and regenerated on expiry.
+By default GitHub grants 60-minute validity to installation tokens and that's what we use here. However, every interaction with gh-app-auth leads to creation of a new token. They are not reused between consequtive calls, unless it is driven by the some internal git flows. 
 
 ## Commands
 
@@ -66,6 +65,8 @@ Installation tokens are cached in memory for 55 minutes (GitHub grants
 | `gitconfig` | Manage git credential helper entries |
 | `migrate` | Move keys to encrypted storage |
 | `git-credential` | Git credential helper (called by Git) |
+| `help` | Show help for any command |
+| `debug` | Show information about the scope of the configured credentials i.e. app installations and repositories (useful for troubleshooting) |
 
 Run `gh app-auth <command> --help` for flags and usage.
 
@@ -82,7 +83,3 @@ For contributors:
 - [Architecture](docs-improved/architecture.md)
 - [Development guide](docs-improved/development.md)
 - [Contributing](CONTRIBUTING.md)
-
-## License
-
-MIT &mdash; see [LICENSE](LICENSE).
