@@ -10,10 +10,18 @@ Configures GitHub App authentication with automatic git credential helper setup.
 
 **Features:**
 
+- **Rootless installation** - No sudo required, installs to `~/.local/bin`
 - Installs GitHub CLI and gh-app-auth extension
 - Configures GitHub App with encrypted keyring storage
 - Automatically syncs git credential helpers
 - Registers cleanup hooks (optional)
+- Supports amd64 and arm64 architectures
+
+**Technical Details:**
+
+The action installs binaries to `~/.local/bin` and uses `$GITHUB_PATH` to make them
+available in subsequent steps. A verification step ensures tools are accessible
+before proceeding with configuration.
 
 **Example Usage:**
 
@@ -26,18 +34,18 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Recommended: Auto-detect prefix from repository owner
       - name: Setup GitHub App Auth
         uses: AmadeusITGroup/gh-app-auth/.github/actions/setup-gh-app-auth@main
         with:
           app-id: ${{ secrets.GITHUB_APP_ID }}
           private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
-          patterns: 'github.com/myorg/*'
-          app-name: 'My GitHub App'
+          # patterns is optional - defaults to github.com/${{ github.repository_owner }}/
 
       - name: Checkout code with submodules
         run: |
-          git clone --recurse-submodules https://github.com/myorg/repo
-          cd repo
+          git clone --recurse-submodules https://github.com/${{ github.repository }}
+          cd $(basename ${{ github.repository }})
 
       - name: Build
         run: make build
@@ -48,9 +56,9 @@ jobs:
 | Input               | Required | Default        | Description                                         |
 | ------------------- | -------- | -------------- | --------------------------------------------------- |
 | **Single-App Mode** |          |                |                                                     |
-| `app-id`            | No*      | -              | GitHub App ID (for single app setup)                |
+| `app-id`            | No*      | -              | GitHub App ID                                       |
 | `private-key`       | No*      | -              | GitHub App private key (PEM format)                 |
-| `patterns`          | No*      | -              | Repository patterns (comma-separated)               |
+| `patterns`          | No       | Auto-detected  | Repository prefixes (e.g., `github.com/org/`). Defaults to `github.com/${{ github.repository_owner }}/` |
 | `app-name`          | No       | `'GitHub App'` | Friendly name for the app                           |
 | **Multi-App Mode**  |          |                |                                                     |
 | `apps-config`       | No*      | -              | JSON array of app configurations (see examples)     |
@@ -59,7 +67,9 @@ jobs:
 | `sync-git-config`   | No       | `'true'`       | Auto-sync git credential helpers                    |
 | `extension-version` | No       | `''`           | Specific version to install (default: latest)       |
 
-_*Note: Either specify `app-id`/`private-key`/`patterns` for single-app mode OR `apps-config` for multi-app mode. One mode is required._
+_*Note: Either specify `app-id`/`private-key` for single-app mode OR `apps-config` for multi-app mode. One mode is required._
+
+**Important:** Use string prefixes like `github.com/org/`, not glob patterns like `github.com/org/*`. The installation ID is auto-detected from the App ID and private key.
 
 **Outputs:**
 
@@ -96,7 +106,7 @@ jobs:
         with:
           app-id: ${{ secrets.GITHUB_APP_ID }}
           private-key: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
-          patterns: 'github.com/myorg/*'
+          patterns: 'github.com/myorg/'
           cleanup-on-exit: 'false'  # We'll handle cleanup manually
 
       - name: Build
@@ -140,19 +150,19 @@ jobs:
               {
                 "app-id": "${{ secrets.ORG1_APP_ID }}",
                 "private-key": "${{ secrets.ORG1_PRIVATE_KEY }}",
-                "patterns": "github.com/org1/*",
+                "patterns": "github.com/org1/",
                 "app-name": "Organization 1"
               },
               {
                 "app-id": "${{ secrets.ORG2_APP_ID }}",
                 "private-key": "${{ secrets.ORG2_PRIVATE_KEY }}",
-                "patterns": "github.com/org2/*",
+                "patterns": "github.com/org2/",
                 "app-name": "Organization 2"
               },
               {
                 "app-id": "${{ secrets.ORG3_APP_ID }}",
                 "private-key": "${{ secrets.ORG3_PRIVATE_KEY }}",
-                "patterns": "github.com/org3/*",
+                "patterns": "github.com/org3/",
                 "app-name": "Organization 3"
               }
             ]
@@ -194,7 +204,7 @@ jobs:
         with:
           app-id: ${{ secrets.ORG1_APP_ID }}
           private-key: ${{ secrets.ORG1_PRIVATE_KEY }}
-          patterns: 'github.com/org1/*'
+          patterns: 'github.com/org1/'
           app-name: 'Org1 App'
           sync-git-config: 'false'  # Sync after all apps configured
 
@@ -204,7 +214,7 @@ jobs:
         with:
           app-id: ${{ secrets.ORG2_APP_ID }}
           private-key: ${{ secrets.ORG2_PRIVATE_KEY }}
-          patterns: 'github.com/org2/*'
+          patterns: 'github.com/org2/'
           app-name: 'Org2 App'
           sync-git-config: 'true'  # Sync all at once
 

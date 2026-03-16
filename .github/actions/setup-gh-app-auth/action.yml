@@ -1,31 +1,35 @@
 name: 'Setup GitHub App Auth'
-description: 'Configure GitHub App authentication with automatic cleanup for non-ephemeral runners'
+description: 'Configure GitHub App authentication with automatic installation ID detection'
 branding:
   icon: 'lock'
   color: 'blue'
 
 inputs:
-  # Single app mode (legacy - still supported)
+  # Single app mode (recommended)
   app-id:
-    description: 'GitHub App ID (use for single app setup)'
+    description: 'GitHub App ID'
     required: false
   private-key:
-    description: 'GitHub App private key (PEM format, use for single app setup)'
+    description: 'GitHub App private key (PEM format)'
     required: false
   patterns:
-    description: 'Repository patterns (comma-separated, e.g., "github.com/org1/*,github.com/org2/*")'
+    description: |
+      Repository prefixes to match (comma-separated, e.g., "github.com/org1/,github.com/org2/").
+      Optional: if omitted, uses github.repository_owner for dynamic detection.
+      Note: These are string prefixes, not glob patterns. Use "github.com/org/" not "github.com/org/*".
     required: false
   app-name:
     description: 'Friendly name for the GitHub App'
     required: false
     default: 'GitHub App'
 
-  # Multi-app mode (recommended for multiple organizations)
+  # Multi-app mode (for multiple organizations)
   apps-config:
     description: |
       JSON array of GitHub App configurations for multi-org setup.
-      Format: [{"app-id": "123", "private-key": "...", "patterns": "github.com/org/*", "app-name": "Org App"}]
-      Either specify this OR the individual app-id/private-key/patterns inputs.
+      Format: [{"app-id": "123", "private-key": "...", "patterns": "github.com/org/", "app-name": "Org App"}]
+      Use prefixes ("github.com/org/") not globs ("github.com/org/*").
+      Either specify this OR the individual app-id/private-key inputs.
     required: false
 
   # Common options
@@ -56,28 +60,88 @@ runs:
     - name: Install required tools
       shell: bash
       run: |
+        # Ensure ~/.local/bin exists and is in PATH
+        mkdir -p "$HOME/.local/bin"
+        export PATH="$HOME/.local/bin:$PATH"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
         # Install GitHub CLI if not present
         if ! command -v gh &> /dev/null; then
-          echo "📦 Installing GitHub CLI..."
-          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-          sudo apt update
-          sudo apt install gh -y
-          echo "✅ GitHub CLI installed"
+          echo "📦 Installing GitHub CLI (rootless)..."
+
+          # Detect architecture
+          ARCH=$(uname -m)
+          case $ARCH in
+            x86_64) GH_ARCH="amd64" ;;
+            aarch64|arm64) GH_ARCH="arm64" ;;
+            *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
+          esac
+
+          # Download latest GitHub CLI binary
+          GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | \
+            grep '"tag_name"' | cut -d'"' -f4 | sed 's/^v//')
+          GH_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${GH_ARCH}.tar.gz"
+
+          echo "   Downloading gh v${GH_VERSION} for ${GH_ARCH}..."
+          curl -fsSL "$GH_URL" -o /tmp/gh.tar.gz
+          tar -xzf /tmp/gh.tar.gz -C /tmp
+          mv "/tmp/gh_${GH_VERSION}_linux_${GH_ARCH}/bin/gh" "$HOME/.local/bin/gh"
+          chmod +x "$HOME/.local/bin/gh"
+          rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_VERSION}_linux_${GH_ARCH}"
+
+          echo "✅ GitHub CLI v${GH_VERSION} installed to ~/.local/bin"
         else
-          echo "✅ GitHub CLI already installed"
+          echo "✅ GitHub CLI already installed: $(command -v gh)"
         fi
 
         # Install jq for JSON parsing (needed for multi-app mode)
         if ! command -v jq &> /dev/null; then
-          echo "📦 Installing jq..."
-          sudo apt update && sudo apt install jq -y
-          echo "✅ jq installed"
+          echo "📦 Installing jq (rootless)..."
+
+          # Detect architecture
+          ARCH=$(uname -m)
+          case $ARCH in
+            x86_64) JQ_ARCH="amd64" ;;
+            aarch64|arm64) JQ_ARCH="arm64" ;;
+            *) echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
+          esac
+
+          # Download jq binary
+          JQ_VERSION="1.7.1"
+          JQ_URL="https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux-${JQ_ARCH}"
+
+          echo "   Downloading jq v${JQ_VERSION} for ${JQ_ARCH}..."
+          curl -fsSL "$JQ_URL" -o "$HOME/.local/bin/jq"
+          chmod +x "$HOME/.local/bin/jq"
+
+          echo "✅ jq v${JQ_VERSION} installed to ~/.local/bin"
         else
-          echo "✅ jq already installed"
+          echo "✅ jq already installed: $(command -v jq)"
         fi
+
+    - name: Verify tools are in PATH
+      shell: bash
+      run: |
+        echo "🔍 Verifying installed tools are accessible..."
+
+        if ! command -v gh &> /dev/null; then
+          echo "❌ Error: gh not found in PATH"
+          echo "   PATH: $PATH"
+          echo "   Expected location: $HOME/.local/bin/gh"
+          ls -la "$HOME/.local/bin/" || true
+          exit 1
+        fi
+
+        if ! command -v jq &> /dev/null; then
+          echo "❌ Error: jq not found in PATH"
+          echo "   PATH: $PATH"
+          echo "   Expected location: $HOME/.local/bin/jq"
+          ls -la "$HOME/.local/bin/" || true
+          exit 1
+        fi
+
+        echo "✅ gh found at: $(command -v gh)"
+        echo "✅ jq found at: $(command -v jq)"
 
     - name: Install gh-app-auth extension
       shell: bash
@@ -131,21 +195,31 @@ runs:
           echo "📝 Single-app mode: Configuring one GitHub App"
 
           # Validate required inputs for single-app mode
-          if [ -z "${{ inputs.app-id }}" ] || [ -z "${{ inputs.private-key }}" ] || [ -z "${{ inputs.patterns }}" ]; then
-            echo "❌ Error: For single-app mode, app-id, private-key, and patterns are required"
+          if [ -z "${{ inputs.app-id }}" ] || [ -z "${{ inputs.private-key }}" ]; then
+            echo "❌ Error: app-id and private-key are required"
             echo "   Or use apps-config for multi-app setup"
             exit 1
+          fi
+
+          # Determine patterns: use input or auto-detect from repository owner
+          PATTERNS="${{ inputs.patterns }}"
+          if [ -z "$PATTERNS" ]; then
+            echo "🔍 No patterns specified, using github.repository_owner for auto-detection"
+            PATTERNS="github.com/${{ github.repository_owner }}/"
+            echo "   Detected prefix: $PATTERNS"
           fi
 
           # Setup with encrypted storage (keyring)
           export GH_APP_PRIVATE_KEY="${{ inputs.private-key }}"
           gh app-auth setup \
             --app-id "${{ inputs.app-id }}" \
-            --patterns "${{ inputs.patterns }}" \
+            --patterns "$PATTERNS" \
             --name "${{ inputs.app-name }}"
           unset GH_APP_PRIVATE_KEY
 
           echo "✅ GitHub App configured"
+          echo "   Installation ID: auto-detected"
+          echo "   Prefix: $PATTERNS"
         fi
 
         # Output config path

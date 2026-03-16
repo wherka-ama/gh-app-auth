@@ -51,6 +51,12 @@ make fmt
 # Full CI simulation
 make ci
 
+# Lint YAML files
+make yamllint
+
+# Lint Markdown files
+make markdownlint
+
 # Security scan
 make security-scan
 
@@ -291,6 +297,119 @@ test(auth): add integration tests for token refresh
 - [ ] Commit messages follow Conventional Commits
 - [ ] No sensitive data in code or logs
 
+## Linting Requirements
+
+### YAML Files (.github/actions/, .github/workflows/, *.yml)
+
+**CRITICAL**: All YAML files must pass `make yamllint` before committing.
+
+**Common Issues**:
+
+```yaml
+# ❌ BAD - Trailing spaces (yamllint error)
+- name: Install tools
+  run: |
+    echo "Installing..."
+    
+    if ! command -v gh; then
+
+# ✅ GOOD - No trailing spaces
+- name: Install tools
+  run: |
+    echo "Installing..."
+
+    if ! command -v gh; then
+```
+
+**Line Length**: Maximum 120 characters per line
+
+```yaml
+# ❌ BAD - Line too long (>120 chars)
+description: 'Configure GitHub App authentication for Git operations with automatic installation ID detection and cleanup'
+
+# ✅ GOOD - Split or shorten
+description: 'Configure GitHub App authentication with automatic installation ID detection'
+```
+
+**Multi-line Commands**: Use backslash continuation for long commands
+
+```yaml
+# ❌ BAD - Single long line
+GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | grep '"tag_name"' | cut -d'"' -f4 | sed 's/^v//')
+
+# ✅ GOOD - Split with backslash
+GH_VERSION=$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest | \
+  grep '"tag_name"' | cut -d'"' -f4 | sed 's/^v//')
+```
+
+**Blank Lines in Shell Scripts**: Use single blank line, not trailing spaces
+
+```yaml
+# ❌ BAD - Trailing spaces on blank line
+run: |
+  echo "Step 1"
+  
+  echo "Step 2"
+
+# ✅ GOOD - True blank line (no spaces)
+run: |
+  echo "Step 1"
+
+  echo "Step 2"
+```
+
+### Markdown Files (*.md)
+
+**CRITICAL**: All markdown files must pass `make markdownlint` before committing.
+
+**Common Rules**:
+
+- **MD022**: Blank lines around headings
+- **MD031**: Blank lines around code blocks
+- **MD032**: Blank lines around lists
+- **MD058**: Blank lines around tables
+
+**Example**:
+
+❌ **BAD**: No blank lines around code blocks
+
+```markdown
+## Heading
+Some text immediately after heading.
+    code block here
+More text.
+```
+
+✅ **GOOD**: Blank lines around code blocks
+
+```markdown
+## Heading
+
+Some text with blank line before.
+
+    code block here
+
+More text with blank lines around code block.
+```
+
+### Before Committing
+
+**Always run**:
+
+```bash
+make yamllint    # Check YAML files
+make markdownlint # Check Markdown files
+make quality     # Check Go code
+make ci          # Full CI simulation
+```
+
+**Quick fix for trailing spaces**:
+
+```bash
+# Remove trailing spaces from YAML files
+find .github -name "*.yml" -type f -exec sed -i 's/[[:space:]]*$//' {} +
+```
+
 ## Boundaries
 
 ### ✅ Always Do
@@ -387,6 +506,59 @@ go tool cover -func=coverage.out
 
 # Run specific test
 go test -v -run TestFunctionName ./pkg/...
+```
+
+## Documentation Standards
+
+### Markdown Linting
+
+All markdown files must pass `make markdownlint`. This is enforced in CI/CD.
+
+**Common Rules (MD = markdownlint):**
+
+| Rule | Description | Example |
+|------|-------------|---------|
+| MD022 | Blank lines around headings | Add blank line before/after Heading |
+| MD031 | Blank lines around code blocks | Add blank line before/after fences |
+| MD032 | Blank lines around lists | Add blank line before/after list items |
+| MD058 | Blank lines around tables | Add blank line before/after tables |
+
+**Correct Example:**
+
+```markdown
+## Section Heading
+
+- List item 1
+- List item 2
+
+### Sub-heading
+
+Some text here.
+
+```go
+code block
+```
+
+More text.
+
+| Column 1 | Column 2 |
+|----------|----------|
+| value 1  | value 2  |
+
+Final paragraph.
+
+```
+
+**Check Before Committing:**
+
+```bash
+make markdownlint
+```
+
+**Auto-fix (where possible):**
+
+```bash
+npx markdownlint-cli2 --fix "**/*.md"
 ```
 
 ---
