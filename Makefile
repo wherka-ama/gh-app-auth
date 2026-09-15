@@ -161,7 +161,7 @@ misspell:
 markdownlint:
 	@echo "Running markdownlint..."
 	@command -v npx >/dev/null 2>&1 || { echo "❌ npx not found. Install Node.js to run markdownlint"; exit 1; }
-	npx --yes markdownlint-cli2@$(MARKDOWNLINT_CLI2_VERSION) "**/*.md" "!node_modules/**" "!.tmp/**"
+	npx --yes markdownlint-cli2@$(MARKDOWNLINT_CLI2_VERSION) "**/*.md" "!node_modules/**" "!.tmp/**" "!CHANGELOG.md"
 
 # Run yamllint (requires pip install yamllint)
 yamllint:
