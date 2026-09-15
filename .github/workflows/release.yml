@@ -250,7 +250,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.release_tag }}
         run: |
-          gh release edit "$TAG" --draft=false --latest
+          # No checkout in this job — gh needs an explicit repo (no .git remotes)
+          gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false --latest
           echo "Release $TAG published as latest"
 
       - name: Post-publish sanity
@@ -258,9 +259,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.release_tag }}
         run: |
-          gh release view "$TAG" --json isDraft,isPrerelease \
+          gh release view "$TAG" --repo "${{ github.repository }}" --json isDraft,isPrerelease \
             --jq '"draft=\(.isDraft) prerelease=\(.isPrerelease)"'
-          gh release download "$TAG" --pattern "linux-amd64" --dir /tmp/verify --clobber
+          gh release download "$TAG" --repo "${{ github.repository }}" \
+            --pattern "linux-amd64" --dir /tmp/verify --clobber
           /tmp/verify/linux-amd64 --version
           gh attestation verify /tmp/verify/linux-amd64 --owner "${{ github.repository_owner }}"
 
