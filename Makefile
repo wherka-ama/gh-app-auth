@@ -66,7 +66,7 @@ RPM_RELEASE ?= 1
 COMMIT := $(shell git rev-parse --short HEAD)
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS := -ldflags "-X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildTime=$(BUILD_TIME)"
-GOLANGCI_LINT_VERSION := v2.1.6
+GOLANGCI_LINT_VERSION := v2.13.2
 MARKDOWNLINT_CLI2_VERSION := 0.20.0
 YAMLLINT_VERSION := 1.38.0
 ACTIONLINT_VERSION := 1.7.11
@@ -82,7 +82,9 @@ INEFFASSIGN := go run github.com/gordonklaus/ineffassign@latest
 MISSPELL := go run github.com/client9/misspell/cmd/misspell@latest
 GOSEC := go run github.com/securego/gosec/v2/cmd/gosec@latest
 GOVULNCHECK := go run golang.org/x/vuln/cmd/govulncheck@latest
-NFPM_CMD := go run github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+# Pinned: @latest floats and can silently outrun the go.mod toolchain (v2.47.0
+# requires go >= 1.26.4). Keep this in sync with the go directive in go.mod.
+NFPM_CMD := go run github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
 ACTIONLINT := go run github.com/rhysd/actionlint/cmd/actionlint@v$(ACTIONLINT_VERSION)
 
 # Build the extension
@@ -400,9 +402,13 @@ package-deb:
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o dist/linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION); \
-	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml && \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
+	@test -f dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb || { echo "❌ expected package missing: dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb"; exit 1; }
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb"
 
 # Build DEB package for arm64
@@ -410,9 +416,13 @@ package-deb-arm64: release
 	@echo "Building DEB package for arm64..."
 	@test -f dist/linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION); \
-	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml; \
-	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
+	envsubst '$$GOARCH $$ARCH $$VERSION' < nfpm.yaml > nfpm-temp.yaml && \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
+	@test -f dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb || { echo "❌ expected package missing: dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb"; exit 1; }
 	@echo "✅ DEB package created: dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb"
 
 
@@ -423,9 +433,13 @@ package-rpm:
 	@echo "Building Linux amd64 binary..."
 	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build $(LDFLAGS) -o dist/linux-amd64 .
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
+	@test -f dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm || { echo "❌ expected package missing: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm"; exit 1; }
 	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm"
 
 # Build RPM package for arm64
@@ -433,9 +447,13 @@ package-rpm-arm64: release
 	@echo "Building RPM package for arm64..."
 	@test -f dist/linux-arm64 || { echo "❌ Linux ARM64 binary not found. Run 'make release' first."; exit 1; }
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	GOARCH=$(shell go env GOARCH) $(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
+	@test -f dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm || { echo "❌ expected package missing: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm"; exit 1; }
 	@echo "✅ RPM package created: dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm"
 
 
@@ -446,7 +464,19 @@ packages: dev-setup release package-deb package-rpm package-deb-arm64 package-rp
 	@echo "=========================================="
 	@echo "  All packages built successfully!"
 	@echo "=========================================="
-	@ls -lh dist/*.deb dist/*.rpm 2>/dev/null || echo "⚠️  Some packages may not have been created"
+	@missing=0; \
+	for pkg in \
+		dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb \
+		dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb \
+		dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm \
+		dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; do \
+		if [ -f "$$pkg" ]; then \
+			ls -lh "$$pkg"; \
+		else \
+			echo "❌ missing expected package: $$pkg"; missing=1; \
+		fi; \
+	done; \
+	[ "$$missing" -eq 0 ] || { echo "❌ package build incomplete — see missing files above"; exit 1; }
 
 # Validate package architectures match targets
 validate-packages:
@@ -502,30 +532,42 @@ packages-local:
 	@GOOS=linux GOARCH=$(shell go env GOARCH) CGO_ENABLED=0 go build $(LDFLAGS) -o dist/linux-$(shell go env GOARCH) .
 ifeq ($(shell go env GOARCH),amd64)
 	@export GOARCH=amd64 ARCH=amd64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_amd64.deb && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_x86_64.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (amd64)"
 else ifeq ($(shell go env GOARCH),arm64)
 	@export GOARCH=arm64 ARCH=arm64 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_arm64.deb && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_aarch64.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm64)"
 else ifeq ($(shell go env GOARCH),386)
 	@export GOARCH=386 ARCH=386 VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_i386.deb && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_i386.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (386)"
 else ifeq ($(shell go env GOARCH),arm)
 	@export GOARCH=arm ARCH=arm VERSION=$(PKG_VERSION) RPM_RELEASE=$(RPM_RELEASE); \
-	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb; \
-	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm; \
+	envsubst '$$GOARCH $$ARCH $$VERSION $$RPM_RELEASE' < nfpm.yaml > nfpm-temp.yaml && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager deb --target dist/$(BINARY_NAME)_$(PKG_VERSION)_armhf.deb && \
+	$(NFPM_CMD) pkg --config nfpm-temp.yaml --packager rpm --target dist/$(BINARY_NAME)_$(PKG_VERSION)-$(RPM_RELEASE)_armv7hl.rpm || \
+		{ rm -f nfpm-temp.yaml; \
+		  echo "❌ nfpm failed — check 'go version' satisfies the nfpm module's Go requirement ($(NFPM_CMD))"; \
+		  exit 1; }; \
 	rm nfpm-temp.yaml
 	@echo "✅ Local packages created (arm)"
 else
