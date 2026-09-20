@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1](https://github.com/wherka-ama/gh-app-auth/compare/v0.1.0...v0.1.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ci:** bump golangci-lint to v2.13.2 in lint.yml too ([d4431e7](https://github.com/wherka-ama/gh-app-auth/commit/d4431e7a95c7f96a0bf1cb54ff9938efb491656e))
+* **ci:** exclude release-please-generated CHANGELOG.md from markdownlint ([2d1d1dd](https://github.com/wherka-ama/gh-app-auth/commit/2d1d1ddc866b6bb283fa5f1066cbf2b3465b0d52))
+* **ci:** pass --repo to gh commands in publish job ([1aeea65](https://github.com/wherka-ama/gh-app-auth/commit/1aeea65ebca1025f3eaaabb1ff1cd3f6f28f7eb6))
+* **ci:** pass --repo to gh commands in the publish job ([d80f4b9](https://github.com/wherka-ama/gh-app-auth/commit/d80f4b9afa08aadbb2c05b5fe1e24255cfbcf37f))
+
 ## [0.1.0](https://github.com/wherka-ama/gh-app-auth/compare/v0.0.16...v0.1.0) (2026-09-15)
 
 
