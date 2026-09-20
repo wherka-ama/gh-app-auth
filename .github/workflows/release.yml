@@ -267,6 +267,7 @@ jobs:
             --jq '"draft=\(.isDraft) prerelease=\(.isPrerelease)"'
           gh release download "$TAG" --repo "${{ github.repository }}" \
             --pattern "linux-amd64" --dir /tmp/verify --clobber
+          chmod +x /tmp/verify/linux-amd64  # release download does not preserve exec bit
           /tmp/verify/linux-amd64 --version
           gh attestation verify /tmp/verify/linux-amd64 --owner "${{ github.repository_owner }}"
 
