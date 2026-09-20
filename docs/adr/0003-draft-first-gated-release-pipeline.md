@@ -26,9 +26,12 @@ Verified mechanics that shaped the design (fork probes, recorded in
 `.tmp/studies/ideal-release-flow-design.md` §9a):
 
 - Draft releases do **not** materialize the git tag — it appears only at
-  publish, so the pipeline must create the tag explicitly for
+  publish. Under immutable releases the draft *binds* the tag name, so the ref
+  cannot be pushed while the draft exists (a push is evaluated as an update and
+  rejected even for admin actors — verified on fork). The pipeline therefore
+  tags the release commit **locally** in `prepare`/`build` so
   `git describe --tags --exact-match` (which feeds `LDFLAGS` in the Makefile)
-  to resolve in the build job.
+  resolves; `publish` materializes the remote ref at `target_commitish`.
 - `gh release download` on a draft requires `contents: write` on
   `GITHUB_TOKEN` — read-only tokens get `release not found`.
 - `gh release create` server-side tag creation *does* fire `push: tags`, but a
@@ -72,9 +75,10 @@ dispatch / tag-push / workflow_call → prepare → build → [e2e ∥ attest] �
   which must create *draft* releases and chain explicitly, never relying on
   `GITHUB_TOKEN` events).
 - **`prepare`** resolves the version via `scripts/next-version.sh` (explicit
-  version, conventional-commit auto-bump, or caller-provided tag), creates the
-  git tag at the release commit, and creates or reuses the draft release. It
-  refuses to touch a published release or a tag pointing at a different commit.
+  version, conventional-commit auto-bump, or caller-provided tag), stages the
+  git tag locally at the release commit, and creates or reuses the draft
+  release. It refuses to touch a published release or a tag pointing at a
+  different commit.
 - **`build`** checks out the tag, runs unit tests, `make release packages`,
   writes `dist/checksums.txt`, and uploads everything to the draft with
   `--clobber` (idempotent re-runs).

@@ -10,7 +10,7 @@ name: Release
 #
 # Triggers:
 #   workflow_dispatch  "release now" — resolves the version from an explicit
-#                      input or conventional-commit bump, creates tag + draft.
+#                      input or conventional-commit bump, stages tag + creates draft.
 #   push: tags         a v* tag pushed by hand — the pipeline stages the draft
 #                      on it and gates as usual.
 #   workflow_call      chained from release-please.yml after a release PR
@@ -70,7 +70,7 @@ permissions: {}  # deny-all by default; jobs declare their own
 
 jobs:
   # ─────────────────────────────────────────────────────────
-  # Resolve the version, create the git tag and the draft release.
+  # Resolve the version, stage the git tag and create the draft release.
   # ─────────────────────────────────────────────────────────
   prepare:
     name: Prepare (version, tag, draft)
@@ -102,20 +102,21 @@ jobs:
           TAG: ${{ steps.resolve.outputs.release_tag }}
           REF: ${{ steps.resolve.outputs.ref_sha }}
         run: |
-          # Draft releases do NOT create the git tag (verified on fork) — it only
-          # materializes at publish. Create it explicitly so downstream jobs can
-          # check out the tag and `git describe --tags --exact-match` resolves.
+          # Draft releases bind tag_name — under immutable releases the ref
+          # cannot be pushed while the draft exists (verified on fork: the push
+          # is evaluated as an update and rejected even for admins). The remote
+          # tag materializes when publish flips the draft at target_commitish.
+          # Tag locally only, so `git describe --tags --exact-match` resolves.
           if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
             EXISTING=$(git rev-parse "$TAG^{commit}")
             [ "$EXISTING" = "$REF" ] || {
               echo "::error::tag $TAG exists at $EXISTING, expected $REF"
               exit 1
             }
-            echo "tag $TAG already exists at $REF"
+            echo "tag $TAG already exists at $REF (manual-tag trigger)"
           else
             git tag "$TAG" "$REF"
-            git push origin "refs/tags/$TAG"
-            echo "created tag $TAG at $REF"
+            echo "staged tag $TAG at $REF — publish materializes the remote ref"
           fi
 
       - name: Ensure draft release exists
@@ -150,8 +151,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7
         with:
-          ref: ${{ needs.prepare.outputs.release_tag }}  # build the tag, not a branch
-          fetch-depth: 0  # git describe --tags --exact-match needs the tag
+          ref: ${{ needs.prepare.outputs.ref_sha }}  # draft-first: the tag ref does not exist yet
+          fetch-depth: 0  # git describe needs history; the tag is created locally below
 
       - name: Set up Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e  # v7
@@ -165,9 +166,12 @@ jobs:
       - name: Build release binaries and packages
         env:
           RPM_RELEASE: 1
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
         run: |
-          # VERSION comes from `git describe --tags --exact-match` (Makefile),
-          # which is why the job checks out the tag itself.
+          # The remote tag only materializes at publish (draft-first flow) —
+          # tag locally so `git describe --tags --exact-match` resolves VERSION.
+          git rev-parse -q --verify "refs/tags/$RELEASE_TAG" >/dev/null || \
+            git tag "$RELEASE_TAG"
           echo "Building: $(git describe --tags --exact-match)"
           make release packages
 
