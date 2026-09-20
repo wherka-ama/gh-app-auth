@@ -3,7 +3,7 @@
 How to publish a new version of `gh-app-auth`.
 
 The short version: **dispatch the `Release` workflow.** It resolves the version,
-creates the tag and a *draft* release, builds and attaches every asset, gates on
+stages the tag and creates a *draft* release, builds and attaches every asset, gates on
 the cross-platform E2E suite and SLSA attestation, then publishes the draft as
 latest. Nothing is publicly visible until the final publish step — the draft is
 the staging area, not a prerelease.
@@ -68,8 +68,8 @@ prepare → build → [e2e ∥ attest] → publish
 
 | Job | What it does |
 |-----|--------------|
-| `prepare` | Resolves the version (`scripts/next-version.sh`), creates the git tag, creates or reuses the **draft** release |
-| `build` | Checks out the tag, runs unit tests, `make release packages`, writes `checksums.txt`, uploads `dist/*` to the draft with `--clobber` |
+| `prepare` | Resolves the version (`scripts/next-version.sh`), stages the git tag (local ref — remote materializes at publish), creates or reuses the **draft** release |
+| `build` | Checks out the release commit and tags it locally, runs unit tests, `make release packages`, writes `checksums.txt`, uploads `dist/*` to the draft with `--clobber` |
 | `e2e` | Calls `e2e-release.yml` — the 10-job matrix validates the draft's real assets on Linux (deb/rpm, amd64+arm64), macOS (arm64+intel), Windows (amd64+arm64) |
 | `attest` | Calls `attest-release.yml` — generates SLSA build provenance for every asset digest, in an isolated reusable workflow |
 | `publish` | `gh release edit --draft=false --latest`, then verifies the release and its attestation |
@@ -90,10 +90,12 @@ Two reasons, both verified on the fork:
 
 Draft specifics that shaped the pipeline:
 
-- **Drafts do not create the git tag** — it materializes at publish. `prepare`
-  creates the tag explicitly so `build` can check it out and
+- **Drafts do not create the git tag** — it materializes at publish. With
+  immutable releases enabled the draft *binds* the tag name: pushing the ref
+  is evaluated as an update and rejected even for admins (verified on fork).
+  `prepare`/`build` therefore tag the release commit **locally** so
   `git describe --tags --exact-match` (which feeds `LDFLAGS` in the Makefile)
-  resolves.
+  resolves; `publish` materializes the remote tag at `target_commitish`.
 - **Downloading draft assets needs `contents: write`** — a read-only
   `GITHUB_TOKEN` gets `release not found`. The e2e jobs carry `contents: write`
   for this reason; they never mutate the release.
