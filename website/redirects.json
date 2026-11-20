@@ -1,0 +1,21 @@
+{
+  "architecture": "understand/architecture/",
+  "ci-cd-guide": "guides/ci/",
+  "configuration": "reference/configuration/",
+  "DIAGNOSTIC_LOGGING": "troubleshoot/diagnostics/",
+  "E2E_INFRASTRUCTURE": "contribute/e2e-infrastructure/",
+  "E2E_TESTING_TUTORIAL": "contribute/e2e-testing/",
+  "ENCRYPTED_STORAGE_ARCHITECTURE": "understand/security-model/",
+  "GITCONFIG_COMMAND": "guides/git-credential-helper/",
+  "installation": "start-here/installation/",
+  "JSON_MULTI_ORG_CONFIG": "reference/github-actions/",
+  "origin_of_the_project": "understand/origins/",
+  "PATTERN_ROUTING": "understand/credential-routing/",
+  "presentation": "start-here/guided-tour/",
+  "README": "",
+  "RELEASE_PROCESS": "contribute/releasing/",
+  "security": "understand/security-model/",
+  "TESTING": "contribute/testing/",
+  "TOKEN_CACHING": "understand/tokens-and-caching/",
+  "troubleshooting": "troubleshoot/"
+}

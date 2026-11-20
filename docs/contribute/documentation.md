@@ -1,0 +1,101 @@
+---
+title: Documentation guide
+description: How the documentation is written, built, tested and published, and how to maintain the generated parts.
+sidebar:
+  order: 7
+---
+
+The documentation lives in `docs/` and is built into a static site by the Astro Starlight project in
+`website/`. There is one copy of the prose: the Markdown in `docs/`.
+
+## Layout
+
+| Path | Contents |
+| --- | --- |
+| `docs/index.mdx` | The home page |
+| `docs/start-here`, `guides`, `reference`, `understand`, `troubleshoot`, `contribute` | The published sections. Folders and files use lowercase-kebab names |
+| `docs/reference/cli/` | Generated command pages, plus the hand-written `index.md` |
+| `docs/*.md` (older names) | Short pointers to the current pages. They are not published |
+| `docs/adr/` | Immutable ADRs. They are linked, not copied |
+| `website/` | Site shell: configuration, components, styles, scripts and browser tests |
+
+Only the six section folders and the home page are published. Anything else in `docs/` is excluded
+from the site until it is migrated, and the historical encrypted-storage proposal stays excluded.
+
+## Writing pages
+
+- Each page needs a `title` and a `description` in its frontmatter. Add the page to `website/sidebar.mjs`;
+  the source check fails for pages missing from the sidebar.
+- Write links as **relative source paths to real files**, such as
+  `[routing](../understand/credential-routing.mdx)`. The build rewrites links to published pages into
+  site routes, and links to anything else in the repository into canonical GitHub source URLs. A link to
+  a missing file fails the build. Do not use site URLs or root-absolute paths.
+- Do not start a page with a `# Title`; the frontmatter title renders as the single page heading.
+- Do not use task-list checkboxes (`- [ ]`); they render as unlabeled form controls and fail the accessibility tests. Use ordinary lists.
+- Use placeholder values, never real credentials, tokens or key material.
+- Label behavior with the release it describes. Mark behavior that is not yet released as unreleased.
+- Diagrams are accessible HTML components with directed, labelled relationships and a text
+  equivalent. Do not add a diagram renderer dependency.
+
+## Generated and checked parts
+
+All commands run in `website/`:
+
+| Command | What it does |
+| --- | --- |
+| `npm run reference:generate` | Builds the CLI once in a temporary directory and rewrites the CLI pages from `--help` in a clean temporary `HOME`, with no user credentials or debug variables |
+| `npm run reference:check` | Fails if a CLI page is stale or missing |
+| `npm run check` | Type check, Markdown links and anchors, sidebar coverage, redirect targets, CLI reference drift, composite-action documentation against `action.yml`, configuration examples and unit tests |
+| `npm run build` | Build the site and the Pagefind search index into `website/dist` |
+| `npm run test:e2e` | Build, serve on port 4322 and run the Playwright browser tests |
+
+`npm run build` and `npm run dev` need only Node.js and the checked-in files. `npm run check` also needs Go,
+because the CLI reference and the configuration examples are verified against the real code.
+
+The configuration check is a small Go program, `website/scripts/checkconfig`. It decodes every
+configuration sample in the [configuration reference](../reference/configuration.md) strictly and
+validates it, and requires App, PAT and mixed samples. Every `yaml` block on that page must be one complete configuration document; use `text` for fragments. An unterminated block or a second document fails the check, and blocks tagged `yaml invalid` must be rejected.
+
+## Browser tests
+
+The Playwright tests cover every published page: navigation, the mobile menu, search, the copy button,
+theme persistence, the custom 404 page, heading anchors, redirects, horizontal overflow at 320 and 390
+pixels and axe checks against WCAG 2.0, 2.1 and 2.2 A and AA in light and dark themes. They do not use
+real credentials or provider APIs and are not end-to-end tests of gh-app-auth itself.
+
+Locally, set `PW_CHANNEL=chrome` to use an installed Chrome. In CI the default Playwright Chromium is
+used. The managed server runs on port 4322 and is never reused. Set `DOCS_BASE_URL` to test a
+server you started yourself.
+
+## Redirects
+
+`website/redirects.json` maps older `docs/NAME` routes to their current pages. The build generates
+static HTML redirect pages from it, and a test follows every entry. Do not assume the host sends an
+HTTP redirect. Add an entry when you rename or move a published page.
+
+## Publishing
+
+The `Documentation` workflow (`.github/workflows/docs.yml`) runs the checks, the build and the browser
+tests on pull requests and pushes. It uploads the site to GitHub Pages only on a push to `main` in
+the canonical repository, or on a manual run on `main` with the publish option. Pull requests never
+publish. Forks publish only by deliberate manual opt-in on their own `main`.
+
+## Maintaining the vendored search component
+
+`website/src/components/Search.astro` is a copy of the Search component from `@astrojs/starlight`
+0.42.11. It differs from upstream in three ways: it imports the icon from `@astrojs/starlight/components`,
+the button's accessible name comes from its visible label with the shortcut hidden from assistive
+technology, and the label is visually hidden on small screens so the icon button keeps a name. Upstream
+code and comments are otherwise unchanged.
+
+Starlight is MIT licensed. The license text is kept verbatim in
+`website/LICENSES/starlight-search.txt`. When you upgrade Starlight, re-diff the new upstream
+`Search.astro` against this copy, reapply the three changes and check that the accessibility tests
+still pass, or drop the copy if upstream has fixed the name.
+
+## Dependencies
+
+Versions in `website/package.json` are pinned exactly and installed with `npm ci` from
+`package-lock.json`. Prefer releases at least a week old, and read the peer dependency notes before
+upgrading Astro or Starlight. The workflow's action versions are pinned and verified through
+`.github/workflows/actions.lock`.

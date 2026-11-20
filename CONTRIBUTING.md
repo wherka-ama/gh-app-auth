@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the GitHub App Authentication ext
 
 ### Prerequisites
 
-- Go 1.19 or later
+- Go matching `go.mod` (currently 1.26.7)
 - GitHub CLI (`gh`) installed and configured
 - Git
 
@@ -313,24 +313,23 @@ All submissions require code review. Please:
 
 ## Release Process
 
-Releases are automated through GitHub Actions, and the trigger is a **GitHub pre-release** created on
-a `vX.Y.Z` tag:
-
-1. Tag the release with semantic versioning (e.g. `v1.2.3`) and push the tag
-2. Create the GitHub release **as a pre-release** — this fires the `Release` workflow
-3. The workflow runs the tests, builds cross-platform binaries and DEB/RPM packages, and uploads them
-4. Once all assets are attached, the workflow promotes the release to latest
-
-Creating a final (non-pre-) release directly publishes a release with **no assets** and no build.
-
-See [docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for the full checklist, the list of assets,
-and troubleshooting.
+Releases are cut by merging the release-please pull request on `main`. The release workflow then stages
+a draft release, builds and attaches every asset, gates on the end-to-end suite and provenance, and
+publishes the draft as latest. Do not create tags or releases by hand. The single authoritative guide
+is the [release runbook](docs/contribute/releasing.md).
 
 ## Architecture Decision Records
 
 Breaking changes, new features, security decisions, and technology choices are recorded as ADRs in
 [`docs/adr/`](docs/adr/README.md). That README holds the template, naming convention, and guidance on
 when an ADR is warranted. Include the ADR in the same PR as the change it documents.
+
+## Documentation
+
+The documentation lives in [`docs/`](docs/README.md) and is built into a site from [`website/`](website/package.json).
+Update the relevant page in the same pull request as a behavior change, and run `npm run check` in
+`website/` when you touch it. The [documentation guide](docs/contribute/documentation.md) explains the
+layout, link conventions and checks.
 
 ## Getting Help
 

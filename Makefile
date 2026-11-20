@@ -184,13 +184,21 @@ ineffassign:
 # Run misspell (spelling checker)
 misspell:
 	@echo "Running misspell..."
-	$(MISSPELL) -error .
+	@list="$$(mktemp)" && trap 'rm -f "$$list"' EXIT && \
+	git ls-files --cached --others --exclude-standard -z -- . \
+		':(exclude).tmp/**' \
+		':(exclude)website/node_modules/**' \
+		':(exclude)website/dist/**' \
+		':(exclude)website/.astro/**' \
+		':(exclude)website/test-results/**' \
+		':(exclude)website/playwright-report/**' > "$$list" && \
+	xargs -0 $(MISSPELL) -error < "$$list"
 
 # Run markdownlint (requires npx/node)
 markdownlint:
 	@echo "Running markdownlint..."
 	@command -v npx >/dev/null 2>&1 || { echo "❌ npx not found. Install Node.js to run markdownlint"; exit 1; }
-	npx --yes markdownlint-cli2@$(MARKDOWNLINT_CLI2_VERSION) "**/*.md" "!node_modules/**" "!.tmp/**" "!CHANGELOG.md"
+	npx --yes markdownlint-cli2@$(MARKDOWNLINT_CLI2_VERSION) "**/*.md" "!node_modules/**" "!website/node_modules/**" "!.tmp/**" "!CHANGELOG.md"
 
 # Run yamllint (requires pip install yamllint)
 yamllint:

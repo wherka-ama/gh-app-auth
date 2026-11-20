@@ -1,5 +1,11 @@
 # Encrypted Storage Architecture Analysis & Proposal
 
+> **Historical proposal, not current behavior.** This document analyzed encrypted storage for
+> gh-app-auth before the current design. It describes options and plans, and some of what it
+> proposes is not implemented. For what v0.2.0 actually does, read the
+> [security model](understand/security-model.md) and [known limitations](troubleshoot/known-limitations.md).
+> It is excluded from the documentation site and from site search.
+
 ## Part 1: GitHub CLI (gh-cli) Encrypted Storage Architecture
 
 ### Overview
