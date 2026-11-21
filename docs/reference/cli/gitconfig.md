@@ -3,7 +3,7 @@ title: gh app-auth gitconfig
 description: Manage git credential helper configuration
 ---
 
-This page is generated from the output of `gh-app-auth gitconfig --help` and describes v0.2.0 behavior. To refresh it, run `npm run reference:generate` in `website/`.
+This page is generated from the output of `gh-app-auth gitconfig --help` in the checked-out source. To refresh it, run `npm run reference:generate` in `website/`.
 
 ## Help output
 

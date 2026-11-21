@@ -3,7 +3,7 @@ title: gh app-auth token
 description: Print a fresh GitHub App installation token
 ---
 
-This page is generated from the output of `gh-app-auth token --help` and describes v0.2.0 behavior. To refresh it, run `npm run reference:generate` in `website/`.
+This page is generated from the output of `gh-app-auth token --help` in the checked-out source. To refresh it, run `npm run reference:generate` in `website/`.
 
 ## Help output
 

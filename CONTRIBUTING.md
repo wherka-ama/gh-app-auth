@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the GitHub App Authentication ext
 
 ### Prerequisites
 
-- Go matching `go.mod` (currently 1.26.7)
+- Go matching [go.mod](go.mod)
 - GitHub CLI (`gh`) installed and configured
 - Git
 

@@ -6,7 +6,7 @@ to the right GitHub App or personal access token (PAT).
 A GitHub App installation token belongs to one installation and expires after an hour. If you or
 your pipelines touch repositories in several organizations, including submodules, you end up
 juggling credentials. gh-app-auth registers each credential with the repository patterns it covers,
-and Git asks it for credentials per request. This README describes v0.2.0.
+and Git asks it for credentials per request.
 
 ## What it does
 
@@ -28,7 +28,7 @@ the GitHub App installation's permissions do that.
 gh extension install AmadeusITGroup/gh-app-auth
 ```
 
-Pin a release with `--pin v0.2.0`, and upgrade with `gh extension upgrade app-auth`.
+Add `--pin <release-tag>` to select a particular release, and upgrade with `gh extension upgrade app-auth`.
 
 ## A safe starting path
 
@@ -76,8 +76,8 @@ Every command is documented in the [CLI reference](docs/reference/cli/index.md).
 ## Documentation
 
 The documentation sources are in [`docs/`](docs/README.md). A documentation site is built from them
-with Astro Starlight, but it is **not published yet**: it goes live after the documentation workflow deploys an
-approved `main`. Until then, read the files on GitHub.
+with Astro Starlight in [`website/`](website/package.json), and the documentation workflow publishes it to GitHub
+Pages from `main`. You can also read the files on GitHub through the table below.
 
 | If you want to | Read |
 | --- | --- |

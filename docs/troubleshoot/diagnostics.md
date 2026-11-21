@@ -23,7 +23,7 @@ named `1` in the current directory, not a default log. Unset the variable when y
 The log file is created with mode `0600` and appended to. Missing parent directories are created with
 mode `0700`. If the directory cannot be created, the log goes to `gh-app-auth-debug.log` in the system
 temporary directory, and if the file cannot be opened, logging is silently disabled. `--debug` is not
-a substitute in v0.2.0.
+a substitute.
 
 ## Read the log
 

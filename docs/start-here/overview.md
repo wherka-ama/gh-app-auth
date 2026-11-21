@@ -9,9 +9,9 @@ gh-app-auth is a [GitHub CLI](https://cli.github.com/) extension that doubles as
 helper. It lets one machine or pipeline use several GitHub Apps, and optionally personal access
 tokens, and picks the right credential for each repository URL.
 
-This documentation describes **v0.2.0**, the current release. Reference pages generated from
-`--help` output are labelled with the release they describe. Anything not yet released is marked as
-unreleased.
+This documentation is maintained alongside the code in the repository. See the
+[changelog](../../CHANGELOG.md) for release history, and run `gh app-auth <command> --help` for the
+help of the version you have installed.
 
 ## What it does
 

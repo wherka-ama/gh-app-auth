@@ -3,7 +3,7 @@ title: gh app-auth test
 description: Test gh-app-auth credentials
 ---
 
-This page is generated from the output of `gh-app-auth test --help` and describes v0.2.0 behavior. To refresh it, run `npm run reference:generate` in `website/`.
+This page is generated from the output of `gh-app-auth test --help` in the checked-out source. To refresh it, run `npm run reference:generate` in `website/`.
 
 ## Help output
 

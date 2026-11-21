@@ -218,7 +218,7 @@ The Makefile intends to stamp each binary through `LDFLAGS`:
 -X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildTime=$(BUILD_TIME)
 ```
 
-In v0.2.0 these flags have no effect, because the Go code defines no such variables (see the known
+These flags have no effect, because the Go code defines no such variables (see the known
 limitation above).
 
 ### Linux packages (`make packages`)

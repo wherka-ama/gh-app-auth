@@ -33,7 +33,9 @@ from the site until it is migrated, and the historical encrypted-storage proposa
 - Do not start a page with a `# Title`; the frontmatter title renders as the single page heading.
 - Do not use task-list checkboxes (`- [ ]`); they render as unlabeled form controls and fail the accessibility tests. Use ordinary lists.
 - Use placeholder values, never real credentials, tokens or key material.
-- Label behavior with the release it describes. Mark behavior that is not yet released as unreleased.
+- Maintain documentation alongside the source; keep general guidance version-neutral.
+  Mention versions only for behavior introduced, changed or removed in a particular release,
+  historical records or intentional pins. Mark unreleased behavior explicitly until it ships.
 - Diagrams are accessible HTML components with directed, labelled relationships and a text
   equivalent. Do not add a diagram renderer dependency.
 

@@ -1,11 +1,11 @@
 # gh-app-auth documentation
 
-This directory holds the documentation for `gh-app-auth` v0.2.0, a GitHub CLI extension and Git
+This directory holds the documentation for `gh-app-auth`, a GitHub CLI extension and Git
 credential helper for GitHub Apps and personal access tokens. The files here are the single source
 for the documentation site, which is built with Astro Starlight from the `website/` directory.
 
-The site is not published yet. It goes live after the documentation workflow deploys an approved
-`main`. Until then, read these files directly on GitHub.
+The documentation workflow publishes the site to GitHub Pages from `main`. You can also read these
+files directly on GitHub.
 
 ## Start here
 

@@ -36,7 +36,7 @@ in use, and which Git credential helpers are configured.
 | A PAT does not work on a headless machine | Filesystem PAT retrieval is not implemented | Whether an OS keyring exists | Use a machine with a keyring |
 | `--json` is not recognized | The flag does not exist | `gh app-auth list --help` | Use `list --format json` |
 | `scope --repo` is not recognized | `scope` has only `--refresh` | `gh app-auth scope --help` | Use `scope --refresh` |
-| `--config` or `--debug` have no effect | The flags are not wired in v0.2.0 | n/a | Use `GH_APP_AUTH_CONFIG` and `GH_APP_AUTH_DEBUG_LOG` |
+| `--config` or `--debug` have no effect | The flags are not wired | n/a | Use `GH_APP_AUTH_CONFIG` and `GH_APP_AUTH_DEBUG_LOG` |
 
 ## Non-GitHub hosts
 

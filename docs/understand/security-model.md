@@ -1,6 +1,6 @@
 ---
 title: Security model
-description: What gh-app-auth protects, where secrets live, who can still read them, and the limits of the design in v0.2.0.
+description: What gh-app-auth protects, where secrets live, who can still read them, and the limits of the design.
 sidebar:
   order: 4
 ---

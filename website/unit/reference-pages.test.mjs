@@ -41,6 +41,8 @@ test('renderPage is deterministic and has no timestamp', () => {
   assert.match(first, /```text\nUsage:\n {2}x\n```/);
   assert.match(first, /## Related/);
   assert.doesNotMatch(first, /20\d\d-\d\d-\d\d/);
+  assert.match(first, /in the checked-out source/);
+  assert.doesNotMatch(first, /describes v\d+\.\d+\.\d+/);
 });
 
 test('renderPage names nested subcommands and omits empty related lists', () => {

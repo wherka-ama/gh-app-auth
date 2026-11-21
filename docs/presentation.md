@@ -2,14 +2,13 @@
 title: "Solving GitHub App Authentication in CI/CD"
 subtitle: "Multi-organization Git operations with gh-app-auth"
 author: "gh-app-auth Project"
-date: "v0.2.0"
 ---
 
 # GitHub App Authentication in CI/CD
 
 **One credential helper for Git across several organizations**
 
-This optional deck summarizes gh-app-auth v0.2.0. The canonical, maintained documentation is
+This optional deck summarizes gh-app-auth. The canonical, maintained documentation is
 [the guides](README.md); every claim here is explained there.
 
 ---

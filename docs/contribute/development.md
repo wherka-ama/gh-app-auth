@@ -7,7 +7,7 @@ sidebar:
 
 ## Prerequisites
 
-- Go matching `go.mod` (currently 1.26.7)
+- Go matching [go.mod](../../go.mod)
 - The GitHub CLI (`gh`) and Git
 - `make`
 - Node.js 24 only if you work on the documentation site

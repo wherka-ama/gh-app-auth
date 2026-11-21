@@ -133,7 +133,7 @@ refreshed with `gh app-auth scope --refresh` and cached for 24 hours.
 | `priority` | No | Compared with Apps when both match. `setup` defaults it to `5` |
 | `username` | No | Username for HTTP basic authentication. Defaults to `x-access-token` for GitHub |
 
-PAT retrieval from the filesystem store is not implemented in v0.2.0, so use `keyring` for PATs.
+PAT retrieval from the filesystem store is not implemented, so use `keyring` for PATs.
 
 ## What is and is not validated
 

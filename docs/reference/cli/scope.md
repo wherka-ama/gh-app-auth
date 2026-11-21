@@ -3,7 +3,7 @@ title: gh app-auth scope
 description: Manage GitHub App installation scope cache
 ---
 
-This page is generated from the output of `gh-app-auth scope --help` and describes v0.2.0 behavior. To refresh it, run `npm run reference:generate` in `website/`.
+This page is generated from the output of `gh-app-auth scope --help` in the checked-out source. To refresh it, run `npm run reference:generate` in `website/`.
 
 ## Help output
 

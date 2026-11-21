@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-This page lists the variables read by the gh-app-auth code in v0.2.0.
+This page lists the variables read by the gh-app-auth code.
 
 | Variable | Read by | Effect |
 | --- | --- | --- |

@@ -12,7 +12,7 @@ sidebar:
 - A GitHub App or a personal access token to register. See
   [create and install a GitHub App](../guides/create-github-app.md).
 - Go is **not** required to use the extension. It is only needed to build from source or to
-  contribute. The module currently requires Go 1.26.7 (`go.mod`).
+  contribute. Source builders need the Go version specified in [go.mod](../../go.mod).
 
 ## Install the extension
 
@@ -22,7 +22,7 @@ gh extension install AmadeusITGroup/gh-app-auth
 
 `gh` installs the precompiled binary for your platform from the latest GitHub release.
 
-To stay on a specific release, pin it:
+To stay on a specific release, pin it. This example pins `v0.2.0`; choose and test the release you want:
 
 ```bash
 gh extension install AmadeusITGroup/gh-app-auth --pin v0.2.0

@@ -1,6 +1,6 @@
 ---
 title: GitHub Actions reference
-description: Inputs, outputs and implementation limits of the setup-gh-app-auth and cleanup-gh-app-auth composite actions in v0.2.0.
+description: Inputs, outputs and implementation limits of the setup-gh-app-auth and cleanup-gh-app-auth composite actions.
 sidebar:
   order: 4
 ---

@@ -4,7 +4,7 @@ This directory holds two composite actions for setting up and removing GitHub Ap
 workflow: `setup-gh-app-auth` and `cleanup-gh-app-auth`. They are conveniences with real limitations, and
 the documentation recommends explicit, isolated workflow steps instead.
 
-> **Read the limits before you use them (v0.2.0).**
+> **Read the limits before you use them.**
 >
 > - `setup-gh-app-auth` registers its "cleanup hook" as a shell `trap` inside the setup step. It is not a
 >   post-job hook. The trap runs as soon as that step's shell exits, so it can **delete the credentials the

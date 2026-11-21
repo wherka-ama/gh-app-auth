@@ -6,8 +6,8 @@ sidebar:
 ---
 
 `gh app-auth` is the command group installed by the extension. The command pages below are generated
-from the output of `--help` and describe v0.2.0. Run `gh app-auth <command> --help` for the version
-you have installed.
+from the output of `--help` in the repository checkout. Run `gh app-auth <command> --help` for the
+version you have installed.
 
 ## Commands
 
@@ -31,7 +31,7 @@ hand; `gitconfig --sync` configures Git to run it. Its protocol and selection st
 
 ## Flags every command shows
 
-Every command lists `--config` and `--debug` under *Global Flags*. In v0.2.0 these flags are
+Every command lists `--config` and `--debug` under *Global Flags*. These flags are
 registered but not wired the way their help text suggests:
 
 - To choose a configuration file, set `GH_APP_AUTH_CONFIG`. Do not rely on `--config`.

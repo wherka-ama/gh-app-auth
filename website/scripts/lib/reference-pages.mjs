@@ -1,5 +1,3 @@
-export const documentedRelease = 'v0.2.0';
-
 export const relatedLinks = {
   completion: [['Installation', '../../start-here/installation.md']],
   config: [
@@ -64,7 +62,7 @@ title: gh app-auth ${name}
 description: ${summary.replace(/:/g, ' -')}
 ---
 
-This page is generated from the output of \`gh-app-auth ${name} --help\` and describes ${documentedRelease} behavior. To refresh it, run \`npm run reference:generate\` in \`website/\`.
+This page is generated from the output of \`gh-app-auth ${name} --help\` in the checked-out source. To refresh it, run \`npm run reference:generate\` in \`website/\`.
 
 ${body}${relatedBlock}
 `;

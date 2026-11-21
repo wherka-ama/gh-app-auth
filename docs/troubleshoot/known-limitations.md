@@ -1,12 +1,11 @@
 ---
 title: Known limitations
-description: Behaviors of gh-app-auth v0.2.0 that are limits of the current implementation, with the safe alternative for each.
+description: Implementation limits of gh-app-auth that are not misconfigurations, with the safe alternative for each.
 sidebar:
   order: 3
 ---
 
-These are limits of v0.2.0, not misconfigurations. Each lists what to do instead. Fixes will be marked
-as unreleased until they ship.
+These are implementation limits, not misconfigurations. Each entry offers a workaround.
 
 ## Automatic filesystem fallback for App keys
 
