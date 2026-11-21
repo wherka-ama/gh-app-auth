@@ -4,6 +4,7 @@ import { unified } from '@astrojs/markdown-remark';
 import { fileURLToPath } from 'node:url';
 import { listPublished } from './src/lib/published.mjs';
 import { loadRedirects } from './src/lib/redirects.mjs';
+import focusableCodeBlocks from './src/plugins/focusable-code.mjs';
 import remarkSourceLinks from './src/plugins/source-links.mjs';
 import { sidebar } from './sidebar.mjs';
 
@@ -49,6 +50,7 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       markdown: { processedDirs: ['../docs'] },
       disable404Route: true,
+      expressiveCode: { plugins: [focusableCodeBlocks] },
       components: {
         Hero: './src/components/Hero.astro',
         Search: './src/components/Search.astro',
