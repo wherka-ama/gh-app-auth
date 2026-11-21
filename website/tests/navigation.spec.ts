@@ -6,47 +6,53 @@ const groups = ['Start here', 'Guides', 'Reference', 'Understand', 'Troubleshoot
 const redirects: Record<string, string> = JSON.parse(
   fs.readFileSync(new URL('../redirects.json', import.meta.url), 'utf8'),
 );
+const redirectEntries = Object.entries(redirects);
 
 test.describe('sidebar and landmarks', () => {
-  test('sidebar shows every group and visible links under the open groups', async ({ page }) => {
+  test('sidebar shows every group and a visible link for every published page', async ({ page }) => {
     await page.goto('start-here/first-clone/');
     const sidebar = page.locator('#starlight__sidebar');
     for (const group of groups) {
       await expect(sidebar.locator('summary', { hasText: group }).first()).toBeVisible();
     }
+    await sidebar.locator('summary', { hasText: 'CLI commands' }).click();
     const links = sidebar.locator('a[href^="/gh-app-auth/"]:visible');
-    expect(await links.count()).toBeGreaterThan(20);
+    await expect(links).toHaveCount(pages.length - 1);
     await expect(sidebar.locator('a[aria-current="page"]')).toHaveCount(1);
-    await expect(sidebar.locator('a[aria-current="page"]')).toHaveText('Make your first authenticated clone');
+    await expect(sidebar.locator('a[aria-current="page"]')).toHaveText('Get started');
   });
 
   test('every primary route has a sidebar link', async ({ page }) => {
-    await page.goto('start-here/overview/');
+    await page.goto('start-here/first-clone/');
     const sidebar = page.locator('#starlight__sidebar');
     for (const route of primaryRoutes) {
       await expect(sidebar.locator(`a[href$="/${route}"]`), route).toHaveCount(1);
     }
   });
 
-  for (const [group, child] of [
-    ['CLI commands', 'reference/cli/setup/'],
-    ['Continuous integration', 'guides/ci/jenkins/'],
-  ] as const) {
-    test(`nested group "${group}" expands and its pages open`, async ({ page }) => {
-      await page.goto('start-here/overview/');
-      const sidebar = page.locator('#starlight__sidebar');
-      const link = sidebar.locator(`a[href$="/${child}"]`);
-      await expect(link).toBeHidden();
-      await sidebar.locator('summary', { hasText: group }).click();
-      await expect(link).toBeVisible();
-      await link.click();
-      await expect(page).toHaveURL(new RegExp(`${child}$`));
-      await expect(page.locator('h1')).toBeVisible();
-      await expect(sidebar.locator(`a[aria-current="page"][href$="/${child}"]`)).toBeVisible();
+  test('nested group "CLI commands" expands and its pages open', async ({ page }) => {
+    await page.goto('start-here/first-clone/');
+    const sidebar = page.locator('#starlight__sidebar');
+    const link = sidebar.locator('a[href$="/reference/cli/setup/"]');
+    await expect(link).toBeHidden();
+    await sidebar.locator('summary', { hasText: 'CLI commands' }).click();
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/reference\/cli\/setup\/$/);
+    await expect(page.locator('h1')).toBeVisible();
+    await expect(sidebar.locator('a[aria-current="page"][href$="/reference/cli/setup/"]')).toBeVisible();
+  });
+
+  for (const section of ['github-actions', 'jenkins', 'gitlab-ci']) {
+    test(`CI guide section ${section} is reachable from the table of contents`, async ({ page }) => {
+      await page.goto('guides/ci/');
+      await page.locator(`starlight-toc a[href="#${section}"]`).first().click();
+      await expect(page).toHaveURL(new RegExp(`/guides/ci/#${section}$`));
+      await expect(page.locator(`#${section}`)).toBeVisible();
     });
   }
 
-  for (const route of ['understand/credential-routing/', 'troubleshoot/known-limitations/', 'contribute/releasing/']) {
+  for (const route of ['understand/credential-routing/', 'troubleshoot/', 'contribute/releasing/']) {
     test(`clicking the sidebar link for ${route} navigates`, async ({ page }) => {
       await page.goto('start-here/first-clone/');
       await page.locator(`#starlight__sidebar a[href$="/${route}"]`).click();
@@ -114,7 +120,7 @@ test.describe('sidebar and landmarks', () => {
 
   test('every published page is linked from somewhere reachable', async ({ page }) => {
     const reached = new Set<string>();
-    await page.goto('start-here/overview/');
+    await page.goto('start-here/first-clone/');
     const sidebarHrefs = await page
       .locator('#starlight__sidebar a[href^="/gh-app-auth/"]')
       .evaluateAll((as) => as.map((a) => (a as HTMLAnchorElement).getAttribute('href')!));
@@ -138,14 +144,37 @@ test.describe('sidebar and landmarks', () => {
     }
   });
 
-  for (const [name, target] of Object.entries(redirects)) {
-    for (const suffix of ['', '.md']) {
-      test(`legacy route docs/${name}${suffix} redirects`, async ({ page }) => {
-        await page.goto(`docs/${name}${suffix}/`);
-        await page.waitForURL(new RegExp(`/gh-app-auth/${target}$`));
-        await expect(page.locator('h1')).toHaveCount(1);
-      });
-    }
+  test('former PAT guide reaches the registration section', async ({ page }) => {
+    await page.goto('guides/personal-access-tokens/');
+    await page.waitForURL((url) => url.pathname + url.hash === '/gh-app-auth/guides/credentials/#personal-access-tokens');
+    const heading = page.locator('h2#personal-access-tokens');
+    await expect(heading).toHaveText('Personal access tokens');
+    const section = page.locator('.sl-markdown-content > div, .sl-markdown-content').first();
+    const registration = page.locator('h3', { hasText: 'Register a PAT' });
+    await expect(registration).toHaveCount(1);
+    const order = await page.evaluate(() => {
+      const h2 = document.querySelector('h2#personal-access-tokens');
+      const h3 = [...document.querySelectorAll('h3')].find((h) => h.textContent?.includes('Register a PAT'));
+      if (!h2 || !h3) return null;
+      const following = h2.compareDocumentPosition(h3) & Node.DOCUMENT_POSITION_FOLLOWING;
+      const nextH2 = [...document.querySelectorAll('h2')].find((h) => h2.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const before = !nextH2 || !!(h3.compareDocumentPosition(nextH2) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return Boolean(following) && before;
+    });
+    expect(order, 'Register a PAT is under the Personal access tokens h2').toBe(true);
+    await expect(section).toBeVisible();
+    if (process.env.DOCS_SCREENSHOT_DIR) await page.screenshot({ path: `${process.env.DOCS_SCREENSHOT_DIR}/pat-redirect.png` });
+  });
+
+  for (const [source, target] of redirectEntries) {
+    test(`former route ${source} redirects to ${target || 'the home page'}`, async ({ page }) => {
+      await page.goto(source.slice(1));
+      const expected = `/gh-app-auth/${target}`;
+      await page.waitForURL((url) => url.pathname + url.hash === expected);
+      await expect(page.locator('h1')).toHaveCount(1);
+      const fragment = target.includes('#') ? target.slice(target.indexOf('#') + 1) : '';
+      if (fragment) await expect(page.locator(`[id="${fragment}"]`)).toHaveCount(1);
+    });
   }
 });
 

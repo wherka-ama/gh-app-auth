@@ -5,15 +5,13 @@ const outDir = process.env.DOCS_SCREENSHOT_DIR;
 const targets = [
   '',
   'start-here/first-clone/',
-  'start-here/guided-tour/',
+  'guides/credentials/',
+  'guides/ci/',
   'understand/credential-routing/',
   'understand/architecture/',
   'reference/configuration/',
   'troubleshoot/',
   'contribute/testing/',
-  'contribute/e2e-testing/',
-  'guides/ci/gitlab-ci/',
-  'guides/credential-lifecycle/',
 ];
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },

@@ -13,5 +13,5 @@ export const primaryRoutes = [
   'reference/cli/',
   'understand/credential-routing/',
   'troubleshoot/',
-  'contribute/',
+  'contribute/development/',
 ];

@@ -15,12 +15,12 @@ The documentation lives in `docs/` and is built into a static site by the Astro 
 | `docs/index.mdx` | The home page |
 | `docs/start-here`, `guides`, `reference`, `understand`, `troubleshoot`, `contribute` | The published sections. Folders and files use lowercase-kebab names |
 | `docs/reference/cli/` | Generated command pages, plus the hand-written `index.md` |
-| `docs/*.md` (older names) | Short pointers to the current pages. They are not published |
-| `docs/adr/` | Immutable ADRs. They are linked, not copied |
+| `docs/README.md` | Short directory index for readers browsing on GitHub. It is not published |
+| `docs/adr/` | The original immutable ADRs and their index. They are linked, not copied or published |
 | `website/` | Site shell: configuration, components, styles, scripts and browser tests |
 
-Only the six section folders and the home page are published. Anything else in `docs/` is excluded
-from the site until it is migrated, and the historical encrypted-storage proposal stays excluded.
+Only the six section folders and the home page are published; the rest of `docs/` (the directory index
+and the ADRs) is not.
 
 ## Writing pages
 
@@ -71,9 +71,19 @@ server you started yourself.
 
 ## Redirects
 
-`website/redirects.json` maps older `docs/NAME` routes to their current pages. The build generates
-static HTML redirect pages from it, and a test follows every entry. Do not assume the host sends an
-HTTP redirect. Add an entry when you rename or move a published page.
+`website/redirects.json` is a flat map from a former site path to a canonical route, for example
+`"/docs/installation/": "start-here/first-clone/#install"`.
+
+- A source starts and ends with `/` and is a local path: no query, fragment, traversal or backslashes, and it
+  must not shadow a real published route.
+- A target is relative to the site base, with `""` meaning the home page, and may carry a fragment
+  (`#anchor`). It must be an actual canonical route, not another redirect, and the fragment must be a real
+  heading on that page. `npm run check` validates this against the published routes and their parsed
+  headings, and a browser test follows every entry.
+- The build generates a static HTML redirect page for each entry. There are no Markdown stub files, and
+  old external GitHub `blob` links cannot be redirected.
+
+Add an entry when you rename or move a published page.
 
 ## Publishing
 
@@ -85,14 +95,16 @@ publish. Forks publish only by deliberate manual opt-in on their own `main`.
 ## Maintaining the vendored search component
 
 `website/src/components/Search.astro` is a copy of the Search component from `@astrojs/starlight`
-0.42.11. It differs from upstream in three ways: it imports the icon from `@astrojs/starlight/components`,
+0.42.11. It differs from upstream in four ways: it imports the icon from `@astrojs/starlight/components`,
 the button's accessible name comes from its visible label with the shortcut hidden from assistive
-technology, and the label is visually hidden on small screens so the icon button keeps a name. Upstream
-code and comments are otherwise unchanged.
+technology, the label is visually hidden on small screens so the icon button keeps a name, and opening the
+dialog explicitly initializes Pagefind through one idempotent function, so the idle-time preload is only an
+optimization and focus moves to the input only if the dialog is still open. Upstream code and comments are
+otherwise unchanged.
 
 Starlight is MIT licensed. The license text is kept verbatim in
 `website/LICENSES/starlight-search.txt`. When you upgrade Starlight, re-diff the new upstream
-`Search.astro` against this copy, reapply the three changes and check that the accessibility tests
+`Search.astro` against this copy, reapply the four changes and check that the accessibility tests
 still pass, or drop the copy if upstream has fixed the name.
 
 ## Dependencies

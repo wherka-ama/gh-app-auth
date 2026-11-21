@@ -33,7 +33,7 @@ one.
 gh extension install AmadeusITGroup/gh-app-auth
 ```
 
-Then follow [your first authenticated clone](start-here/first-clone.md) to register a GitHub App and
+Then follow [Get started](start-here/first-clone.md) to register a GitHub App and
 clone a private repository with it.
 
 ## How it fits together
@@ -42,20 +42,18 @@ clone a private repository with it.
   longest match selects the GitHub App. See [how credential routing works](understand/credential-routing.mdx).
 - **Tokens stay short-lived and in memory.** Installation tokens are cached in memory for 55 minutes
   per process and are never written to disk. Private keys live in the OS keyring by default; see the
-  [known limitations](troubleshoot/known-limitations.md) before relying on a filesystem fallback.
+  [known limitations](troubleshoot/index.md#known-limitations) before relying on a filesystem fallback.
 - **One helper for Git and the CLI.** `gh app-auth exec` runs a command with a token from the same
   configuration, so scripts and Git share one source of truth.
 
 ## Where to go next
 
-- **Start here:** [overview and limitations](start-here/overview.md),
-  [installation](start-here/installation.md), [your first clone](start-here/first-clone.md),
-  [your first `exec`](start-here/first-exec.md) and the [guided tour](start-here/guided-tour.md).
-- **Guides:** [GitHub Apps](guides/create-github-app.md), [PATs](guides/personal-access-tokens.md),
-  [several organizations](guides/multiple-organizations.md) and [CI](guides/ci/index.md).
-- **Reference:** [CLI](reference/cli/index.md), [configuration](reference/configuration.md) and
-  [environment variables](reference/environment-variables.md).
+- **Start here:** [Get started](start-here/first-clone.md): install, register an App, clone, and run a command.
+- **Guides:** [Manage credentials](guides/credentials.md), [Git integration](guides/git-credential-helper.md)
+  and [CI](guides/ci/index.md).
+- **Reference:** [CLI](reference/cli/index.md), [configuration and environment](reference/configuration.md)
+  and the [GitHub Actions](reference/github-actions.md).
 - **Understand:** [routing](understand/credential-routing.mdx),
   [security model](understand/security-model.md) and [architecture](understand/architecture.mdx).
 - **Troubleshoot and contribute:** [troubleshooting](troubleshoot/index.md) and
-  [contributing](contribute/index.md).
+  [development](contribute/development.md).

@@ -444,5 +444,5 @@ fetched on demand via `go run`, so no separate install is required.
 - [`Makefile`](../../Makefile) — `release`, `packages`, `packages-local`, `validate-packages` targets
 - [`nfpm.yaml`](../../nfpm.yaml) — DEB/RPM package definition
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) — conventional commits, which drive version selection
-- [Installation Guide](../start-here/installation.md) — how users consume these assets
+- [Installation Guide](../start-here/first-clone.md#install) — how users consume these assets
 - [ADR index](../adr/README.md) — record the decisions behind notable changes in a release

@@ -55,4 +55,4 @@ Global Flags:
 
 ## Related
 
-- [Git credential helper guide](../../guides/git-credential-helper.md)
+- [Git integration](../../guides/git-credential-helper.md)

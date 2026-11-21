@@ -39,5 +39,5 @@ Global Flags:
 
 ## Related
 
-- [Configuration reference](../configuration.md)
-- [Environment variables](../environment-variables.md)
+- [Configuration and environment](../configuration.md)
+- [Environment variables](../configuration.md#environment-variables)

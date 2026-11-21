@@ -157,4 +157,4 @@ Global Flags:
 
 ## Related
 
-- [Installation](../../start-here/installation.md)
+- [Install](../../start-here/first-clone.md#install)

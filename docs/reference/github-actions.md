@@ -6,7 +6,7 @@ sidebar:
 ---
 
 The repository ships two composite actions under `.github/actions/`. They exist for convenience;
-the [GitHub Actions guide](../guides/ci/github-actions.md) shows the explicit, isolated approach this
+the [GitHub Actions guide](../guides/ci/index.md#github-actions) shows the explicit, isolated approach this
 documentation recommends. Read the limits below before depending on them.
 
 Reference them by path and pin the ref, for example
@@ -21,7 +21,7 @@ examples use `@main`, which moves.
   **delete the credentials the setup step just configured before later steps run**, not merely leave them
   behind after the job. If you use the composite action and manage cleanup yourself, set
   `cleanup-on-exit: 'false'` and run the cleanup action with `if: always()`. The recommended
-  [guides](../guides/ci/github-actions.md) avoid the composite action entirely.
+  [guides](../guides/ci/index.md#github-actions) avoid the composite action entirely.
 - **Inputs are interpolated into shell scripts.** Values are expanded into the script text, so quotes
   or shell syntax in a value can break the step or run unintended commands. Even repository secrets can
   contain such characters, so passing a secret is not a guarantee of safe interpolation. The `apps-config`
@@ -29,7 +29,7 @@ examples use `@main`, which moves.
 - **No filesystem key option.** The action runs `setup` with the key in `GH_APP_PRIVATE_KEY` and does not
   pass `--use-filesystem --key-file`. Where no OS keyring is available it relies on the automatic
   filesystem fallback, which is known to be unreliable. See
-  [known limitations](../troubleshoot/known-limitations.md).
+  [known limitations](../troubleshoot/index.md#known-limitations).
 - **App ID only.** It takes `app-id`, not a Client ID.
 - **Broad cleanup.** The cleanup action runs `gitconfig --clean --global` (all helper entries) and
   `remove --all`, which removes all configured Apps. It does **not** remove personal access tokens and

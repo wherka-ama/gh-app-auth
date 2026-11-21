@@ -2,7 +2,7 @@
 
 > **Legacy. Not maintained and not the acceptance path.** The maintained live suite is the Go tests in
 > [`test/e2e`](..), run as described in the
-> [end-to-end testing tutorial](../../../docs/contribute/e2e-testing.md). Use the Go suite instead.
+> [end-to-end testing tutorial](../../../docs/contribute/testing.md#live-end-to-end-tests). Use the Go suite instead.
 
 These shell scripts are an older, manual way to set up and check a test environment. They are kept for
 reference only, and they have known problems:

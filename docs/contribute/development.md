@@ -65,10 +65,19 @@ website/    The documentation site shell
 Take extra care, and ask the maintainers first, when you change `pkg/secrets`, `pkg/auth`, `pkg/jwt`,
 the Git credential helper in `cmd/git-credential.go`, the configuration file format or the CI
 workflows. See the [security model](../understand/security-model.md) for current limits and
-[architecture decisions](architecture-decisions.md) for the recorded rationale.
+[architecture decisions](#architecture-decisions) for the recorded rationale.
 
 ## Changes that need more than code
 
 A new command needs a test file, registration in `cmd/root.go` and a regenerated CLI reference page.
 Run `npm run reference:generate` in `website/` after changing any command or flag, so the generated
 reference matches. See the [documentation guide](documentation.md).
+
+## Architecture decisions
+
+Significant technical decisions are recorded as numbered, immutable Architecture Decision Records (ADRs).
+The [ADR index](../adr/README.md) holds the template, naming rules, status lifecycle and the list of
+records with their actual statuses. Write an ADR for breaking changes, new features that introduce a
+concept or trust boundary, security decisions, technology choices, significant refactoring and rejected
+alternatives worth recording. Bug fixes, test additions, documentation-only changes and formatting do not
+need one. Never rewrite an accepted ADR; supersede it with a new one.

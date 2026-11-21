@@ -11,73 +11,35 @@ const cliCommands = fs
   .sort();
 
 export const sidebar = [
-  {
-    label: 'Start here',
-    items: slugs(
-      'start-here/overview',
-      'start-here/installation',
-      'start-here/first-clone',
-      'start-here/first-exec',
-      'start-here/guided-tour',
-    ),
-  },
+  { label: 'Start here', items: slugs('start-here/first-clone') },
   {
     label: 'Guides',
-    items: [
-      ...slugs(
-        'guides',
-        'guides/create-github-app',
-        'guides/personal-access-tokens',
-        'guides/git-credential-helper',
-        'guides/multiple-organizations',
-        'guides/github-enterprise-server',
-        'guides/credential-lifecycle',
-      ),
-      {
-        label: 'Continuous integration',
-        collapsed: true,
-        items: slugs('guides/ci', 'guides/ci/github-actions', 'guides/ci/jenkins', 'guides/ci/gitlab-ci'),
-      },
-    ],
+    items: slugs('guides/credentials', 'guides/git-credential-helper', 'guides/ci'),
   },
   {
     label: 'Reference',
     items: [
-      { slug: 'reference' },
       {
         label: 'CLI commands',
         collapsed: true,
         items: [{ slug: 'reference/cli' }, ...cliCommands.map((name) => ({ slug: `reference/cli/${name}` }))],
       },
-      ...slugs('reference/configuration', 'reference/environment-variables', 'reference/github-actions'),
+      ...slugs('reference/configuration', 'reference/github-actions'),
     ],
   },
   {
     label: 'Understand',
-    items: slugs(
-      'understand/identity-and-credentials',
-      'understand/credential-routing',
-      'understand/tokens-and-caching',
-      'understand/security-model',
-      'understand/architecture',
-      'understand/origins',
-    ),
+    items: slugs('understand/credential-routing', 'understand/security-model', 'understand/architecture'),
   },
-  {
-    label: 'Troubleshoot',
-    items: slugs('troubleshoot', 'troubleshoot/diagnostics', 'troubleshoot/known-limitations'),
-  },
+  { label: 'Troubleshoot', items: slugs('troubleshoot') },
   {
     label: 'Contribute',
     items: slugs(
-      'contribute',
       'contribute/development',
       'contribute/testing',
-      'contribute/e2e-testing',
       'contribute/e2e-infrastructure',
       'contribute/releasing',
       'contribute/documentation',
-      'contribute/architecture-decisions',
     ),
   },
 ];

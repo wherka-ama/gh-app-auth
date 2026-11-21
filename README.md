@@ -82,19 +82,6 @@ explicitly, because `exec` otherwise uses the repository of your current directo
 gh app-auth exec --repo github.com/example-org/private-repo -- gh api repos/example-org/private-repo --jq .full_name
 ```
 
-## Commands
-
-| Command | Purpose |
-| --- | --- |
-| `setup` | Register a GitHub App or PAT with repository patterns |
-| `gitconfig` | Add or remove the Git credential helper entries |
-| `list`, `config`, `scope` | Inspect credentials, the configuration file and installation scope |
-| `test` | Check that a credential works for a repository |
-| `exec`, `token` | Run a command with a token, or print one explicitly |
-| `migrate`, `remove` | Move key storage, or remove credentials |
-
-Every command is documented in the [CLI reference](docs/reference/cli/index.md).
-
 ## Documentation
 
 The documentation sources are in [`docs/`](docs/README.md). A documentation site is built from them
@@ -103,11 +90,11 @@ Pages from `main`. You can also read the files on GitHub through the table below
 
 | If you want to | Read |
 | --- | --- |
-| Get started | [Overview](docs/start-here/overview.md), [installation](docs/start-here/installation.md), [first clone](docs/start-here/first-clone.md) |
-| Do a task | [Guides](docs/guides/index.md), including [CI](docs/guides/ci/index.md) |
-| Look something up | [CLI reference](docs/reference/cli/index.md), [configuration](docs/reference/configuration.md), [environment variables](docs/reference/environment-variables.md) |
+| Get started | [Get started](docs/start-here/first-clone.md) |
+| Do a task | [Manage credentials](docs/guides/credentials.md), [Git integration](docs/guides/git-credential-helper.md), [CI](docs/guides/ci/index.md) |
+| Look something up | [CLI reference](docs/reference/cli/index.md), [configuration and environment](docs/reference/configuration.md) |
 | Understand it | [Credential routing](docs/understand/credential-routing.mdx), [security model](docs/understand/security-model.md), [architecture](docs/understand/architecture.mdx) |
-| Fix a problem | [Troubleshooting](docs/troubleshoot/index.md), [known limitations](docs/troubleshoot/known-limitations.md) |
+| Fix a problem | [Troubleshooting](docs/troubleshoot/index.md) |
 | Contribute | [Contributing](CONTRIBUTING.md), [development](docs/contribute/development.md), [release runbook](docs/contribute/releasing.md) |
 
 ## Known limitations
@@ -119,7 +106,7 @@ Pages from `main`. You can also read the files on GitHub through the table below
 - The `--config` and `--debug` flags are not wired as their help suggests; use `GH_APP_AUTH_CONFIG`
   and `GH_APP_AUTH_DEBUG_LOG` (with an absolute file path).
 
-Details and alternatives are in [known limitations](docs/troubleshoot/known-limitations.md).
+Details and alternatives are in [known limitations](docs/troubleshoot/index.md#known-limitations).
 
 ## Contributing and security
 

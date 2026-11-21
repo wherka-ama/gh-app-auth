@@ -46,4 +46,4 @@ Global Flags:
 
 ## Related
 
-- [Credential lifecycle](../../guides/credential-lifecycle.md)
+- [Maintain credentials](../../guides/credentials.md#maintain-credentials)

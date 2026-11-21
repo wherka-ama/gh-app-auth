@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { listPublished, routeFor } from '../src/lib/published.mjs';
 import YAML from 'yaml';
+import { validateRedirects } from '../src/lib/redirects.mjs';
 import { checkMarkdownLinks } from './lib/check-links.mjs';
 import { headingAnchors } from './lib/markdown.mjs';
 import { sidebar } from '../sidebar.mjs';
@@ -18,6 +19,7 @@ const publishedRoutes = new Set(published.map(routeFor));
 const extraSources = [
   'README.md',
   'CONTRIBUTING.md',
+  'AGENTS.md',
   'MAINTAINERS.md',
   '.github/actions/README.md',
   'test/e2e/README.md',
@@ -79,10 +81,10 @@ for (const slug of knownSlugs) {
 }
 
 const redirects = JSON.parse(fs.readFileSync(new URL('../redirects.json', import.meta.url), 'utf8'));
-for (const [name, target] of Object.entries(redirects)) {
-  if (!publishedRoutes.has(target)) problems.push(`redirect ${name} targets unpublished route ${target}`);
-  if (!fs.existsSync(path.join(docsRoot, `${name}.md`))) problems.push(`redirect ${name} has no legacy source docs/${name}.md`);
-}
+const anchorsByRoute = new Map(
+  published.map((name) => [routeFor(name), headingAnchors(fs.readFileSync(path.join(docsRoot, name), 'utf8'))]),
+);
+problems.push(...validateRedirects(redirects, anchorsByRoute));
 
 if (problems.length > 0) {
   console.error(`Documentation source check failed:\n- ${problems.join('\n- ')}`);

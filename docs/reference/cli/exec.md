@@ -41,5 +41,5 @@ Global Flags:
 
 ## Related
 
-- [Run your first command with exec](../../start-here/first-exec.md)
+- [Run a command](../../start-here/first-clone.md#run-a-command)
 - [Security model](../../understand/security-model.md)

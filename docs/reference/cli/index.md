@@ -38,8 +38,8 @@ registered but not wired the way their help text suggests:
 - To capture diagnostics, set `GH_APP_AUTH_DEBUG_LOG` to an explicit absolute file path. Do not
   rely on `--debug`.
 
-See [known limitations](../../troubleshoot/known-limitations.md) and
-[environment variables](../environment-variables.md).
+See [known limitations](../../troubleshoot/index.md#known-limitations) and
+[environment variables](../configuration.md#environment-variables).
 
 ## Conventions in the examples
 

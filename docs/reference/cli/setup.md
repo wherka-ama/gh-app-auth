@@ -73,6 +73,6 @@ Global Flags:
 
 ## Related
 
-- [Your first authenticated clone](../../start-here/first-clone.md)
-- [Personal access tokens](../../guides/personal-access-tokens.md)
-- [Known limitations](../../troubleshoot/known-limitations.md)
+- [Get started](../../start-here/first-clone.md)
+- [Personal access tokens](../../guides/credentials.md#personal-access-tokens)
+- [Known limitations](../../troubleshoot/index.md#known-limitations)

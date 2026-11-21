@@ -442,7 +442,7 @@ requires an explicit `version` or operator-selected `bump=patch|minor|major`. Th
 tag and creates a **draft** release, builds and attaches all assets, gates on the cross-platform E2E
 suite and build provenance, then publishes the draft as latest. Never publish a release directly —
 once published, an immutable release cannot be repaired or reused; cut the next version. See
-[docs/RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md).
+[docs/contribute/releasing.md](docs/contribute/releasing.md).
 
 ### Fixing a Bug
 
