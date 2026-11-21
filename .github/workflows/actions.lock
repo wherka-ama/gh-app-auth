@@ -45,12 +45,19 @@ workflows:
     '.github/workflows/release.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-go@v7.0.0'
+    '.github/workflows/scorecard.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'actions/upload-artifact@v7.0.2'
+        - 'github/codeql-action@v4.39.3'
+        - 'ossf/scorecard-action@v2.5.0'
     '.github/workflows/security.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-go@v7.0.0'
         - 'github/codeql-action@v4.39.3'
         - 'securego/gosec@v2.30.0'
         - 'trufflesecurity/trufflehog@v3.99.9'
+    '.github/workflows/verify-release-provenance.yml':
+        - 'actions/checkout@v7.0.1'
 dependencies:
     'actions/attest-build-provenance@v4.2.2':
         ref: 'v4.2.2'
@@ -153,6 +160,11 @@ dependencies:
         commit: 'sha1-4052d365f09b8d34eb552c363d1141fd60e2aeb2'
         owner_id: 51309792
         repo_id: 229691577
+    'ossf/scorecard-action@v2.5.0':
+        ref: 'v2.5.0'
+        commit: 'sha1-fa7117db83c52d787ae5a89f350999701505d78e'
+        owner_id: 67707773
+        repo_id: 421101922
     'securego/gosec@v2.30.0':
         ref: 'v2.30.0'
         commit: 'sha1-5eb1d104ef85ff2c905c877eb600e8c1dee33a22'

@@ -122,6 +122,62 @@ contain command-line arguments, repository URLs and file paths, so review them b
 - Rotate keys and PATs on a schedule, and remove credentials you no longer use; see
   [credential lifecycle](../guides/credentials.md#maintain-credentials).
 
+## Supply-chain assurance
+
+These indicators measure different things; none guarantees that the application is safe.
+
+| Indicator | What it means |
+| --- | --- |
+| [OpenSSF Best Practices](https://www.bestpractices.dev/projects/16991) | Maintainer-reported practices and their justifications. An **in progress** badge is not a passing award. |
+| [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/amadeusitgroup/gh-app-auth) | Automated repository-security heuristics, reported out of 10. Not a certification or a SLSA level. |
+| SLSA Build L2, self-assessed | A conservative assessment of the release build provenance against the [SLSA v1.2 Build requirements](https://slsa.dev/spec/v1.2/build-requirements). Not an independent certification or a claim about the Source track. |
+| [Provenance verification](https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/verify-release-provenance.yml?query=branch%3Amain) | The most recent automated check of published artifacts against the expected repository, signer, source commit and hosted-runner policy. Not an automated SLSA-level award. |
+
+### SLSA assessment and evidence
+
+The release process builds on GitHub-hosted runners and generates signed SLSA provenance in the
+repository's attestation store, where consumers can retrieve and verify it. This supports a
+**Build L2 self-assessment**. The assessment concerns build origin and integrity, not absence of
+vulnerabilities, the security of dependencies, or permission to trust the application.
+
+The assessment was checked against the published
+[v0.2.0 release](https://github.com/AmadeusITGroup/gh-app-auth/releases/tag/v0.2.0), source commit
+`8981f431700857cf5276f0edc092ca9818efc0c4`. All six binaries, four Linux packages and the RPM public
+key were downloaded and passed cryptographic verification with the expected repository, attestation
+workflow, source ref and commit, signer commit, and GitHub-hosted runner identity. The verified
+statements' digests also match the release metadata.
+
+**Build L3 is not claimed.** An attestation-only reusable workflow signs digests supplied by the
+parent build job; that separation alone is not an assessment of L3's stronger unforgeability,
+isolation and complete external-parameter requirements. A higher claim needs a documented trusted
+builder and review of those guarantees. See GitHub's
+[guidance on building and attesting in a reusable workflow](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/increase-security-rating).
+
+### Automated checks and their limits
+
+The [Scorecard workflow](../../.github/workflows/scorecard.yml) publishes results after upstream
+`main` changes, on branch-protection changes, and weekly. Its badge needs a successful upstream
+publication before a score is available; scans are not published from this project's forks.
+Some checks depend on information accessible to the workflow's GitHub token, so interpret individual
+findings and access limitations rather than treating the aggregate as a complete audit.
+Action revisions are pinned by the [workflow lockfile](../../.github/workflows/actions.lock).
+The Scorecard action's own container still uses a version tag rather than an image digest;
+the lock tool reports that separate limitation.
+
+The [provenance workflow](../../.github/workflows/verify-release-provenance.yml) checks the latest
+published release daily, after either release workflow completes, and on manual dispatch from
+upstream `main`. It runs after failed release workflows too, because a failure can occur after
+publication. It is a read-only monitor, **not a pre-publication gate**; a green result records the
+release checked in that run, not a promise about releases published afterwards.
+
+The [verification policy](../../scripts/verify-release-provenance.sh) resolves the release tag to a
+commit, downloads its assets without executing them, and verifies every asset except `checksums.txt`
+using GitHub's SLSA provenance verifier. It requires this repository, the
+`attest-release.yml` signer at that same commit, source ref `refs/heads/main`, and a GitHub-hosted
+runner. The checksum manifest is auxiliary metadata covered by a different GitHub release-attestation
+predicate, not by the build-provenance statement. Missing assets, metadata-only releases and failed
+verification fail the monitor. This check does not establish all of L3's platform guarantees.
+
 ## Not covered
 
 - Defense against malware or a compromised machine.
