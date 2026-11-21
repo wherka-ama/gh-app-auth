@@ -1,7 +1,29 @@
-# gh-app-auth
+<p align="center"><img src="website/public/favicon.svg" width="112" height="112" alt="gh-app-auth routing key logo"></p>
+<h1 align="center">gh-app-auth</h1>
+<p align="center"><strong>The right identity. For every remote.</strong><br>A <a href="https://cli.github.com/">GitHub CLI</a> extension and Git credential helper for GitHub Apps and personal access tokens.</p>
 
-A [GitHub CLI](https://cli.github.com/) extension and Git credential helper that routes each Git remote
-to the right GitHub App or personal access token (PAT).
+<p align="center">
+  <a href="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/ci.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI status on upstream main" height="20"></a>
+  <a href="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/e2e.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/e2e.yml/badge.svg?branch=main&amp;event=push" alt="End-to-end test status on upstream main" height="20"></a>
+  <a href="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/codeql.yml?query=branch%3Amain+event%3Apush"><img src="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/codeql.yml/badge.svg?branch=main&amp;event=push" alt="CodeQL analysis status on upstream main" height="20"></a>
+  <a href="https://app.codecov.io/gh/AmadeusITGroup/gh-app-auth/tree/main"><img src="https://img.shields.io/codecov/c/github/AmadeusITGroup/gh-app-auth/main?label=coverage" alt="Codecov coverage on upstream main" height="20"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/AmadeusITGroup/gh-app-auth/releases/latest"><img src="https://img.shields.io/github/v/release/AmadeusITGroup/gh-app-auth?label=release&amp;color=1d4f9c" alt="Latest published release" height="20"></a>
+  <a href="go.mod"><img src="https://img.shields.io/github/go-mod/go-version/AmadeusITGroup/gh-app-auth?label=Go&amp;color=1d4f9c" alt="Go version required by go.mod" height="20"></a>
+  <a href="https://github.com/AmadeusITGroup/gh-app-auth/releases"><img src="https://img.shields.io/github/downloads/AmadeusITGroup/gh-app-auth/total?label=asset%20downloads&amp;color=1d4f9c" alt="Total downloads of GitHub release assets" height="20"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/AmadeusITGroup/gh-app-auth?color=1d4f9c" alt="Repository license" height="20"></a>
+</p>
+
+<p align="center"><sub>Build and coverage badges track the upstream <code>main</code> branch.</sub></p>
+
+<p align="center">
+  <a href="docs/start-here/first-clone.md">Quick start</a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/guides/ci/index.md">Use in CI</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
 A GitHub App installation token belongs to one installation and expires after an hour. If you or
 your pipelines touch repositories in several organizations, including submodules, you end up
