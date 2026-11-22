@@ -23,8 +23,6 @@
   <a href="https://github.com/AmadeusITGroup/gh-app-auth/actions/workflows/verify-release-provenance.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/AmadeusITGroup/gh-app-auth/verify-release-provenance.yml?branch=main&amp;label=provenance" alt="Published-release provenance verification on upstream main" height="20"></a>
 </p>
 
-<p align="center"><sub>Build, coverage, and automated security badges track upstream <code>main</code>. The SLSA level is self-assessed.</sub></p>
-
 <p align="center">
   <a href="docs/start-here/first-clone.md">Quick start</a> ·
   <a href="docs/README.md">Documentation</a> ·
